@@ -1,0 +1,28 @@
+node_modules
+.next
+.next-cache
+dist
+build
+out
+
+# Local env (never commit secrets)
+.env
+.env.local
+.env.*.local
+*.env.local
+.env.development
+.env.production
+
+# Editor / OS
+.DS_Store
+.vscode
+.idea
+*.swp
+*.swo
+
+# Pnpm
+.pnpm-store
+
+# Recording artefacts (the recordings themselves live in compass/videos/)
+*.webm
+narrate-cache/

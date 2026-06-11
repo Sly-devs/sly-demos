@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: 'SF Pro Display', -apple-system, BlinkMacSystemFont, ui-sans-serif,
+    system-ui, sans-serif;
+}
+
+html,
+body {
+  background:
+    radial-gradient(900px 600px at 50% -10%, #1a2238 0%, transparent 60%),
+    #070a12;
+  color: theme('colors.cloud');
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Hide scrollbars inside the phone viewport for a native feel. */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.tabnums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Premium balance-card sheen — sweeps once on mount. */
+.card-sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.16) 48%,
+    transparent 64%
+  );
+  transform: translateX(-100%);
+  animation: card-sweep 1.4s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+}
+
+@keyframes card-sweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .card-sheen::after {
+    display: none;
+  }
+}

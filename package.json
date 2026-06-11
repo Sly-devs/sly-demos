@@ -1,0 +1,19 @@
+{
+  "name": "sly-demos",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Public partner-facing demos for Sly. The agentic economy platform.",
+  "workspaces": [
+    "compass/compass-live",
+    "compass/coral-mobile"
+  ],
+  "scripts": {
+    "compass:live": "pnpm --filter compass-live dev",
+    "compass:mobile": "pnpm --filter coral-mobile dev",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@10.18.3"
+}
