@@ -80,3 +80,41 @@ export function usd(cents: number): string {
 // what they expect without code changes.
 export const HOKA = GIFT;
 export const MANDATE_CEILING_CENTS = ENVELOPE_CENTS;
+
+// Maya = the Savings & Credit surface inside Bouquet, powered by Compass.
+export const MAYA = {
+  holder: 'Maya Chen',
+  agentName: 'Maya Compass Agent',
+  agentBlurb:
+    "Manages Maya's Aave position on Base via the Compass CLI — Sly gates every borrow.",
+  kyaTier: 2,
+  reputation: 4.8,
+  scope: 'compass:credit',
+  borrowAmount: '0.00005',
+  borrowAsset: 'WETH',
+  // Fallbacks used when the live Compass call hasn't returned yet.
+  savingsUsd: 1234.56,
+  supplyApy: 3.42,
+};
+
+export interface MayaBorrowResponse {
+  phase: 'awaiting_approval' | 'settled' | 'error';
+  requestId?: string;
+  amount?: string;
+  asset?: string;
+  scope?: string;
+  purpose?: string;
+  txHash?: string;
+  blockNumber?: number;
+  grantId?: string;
+  error?: string;
+  events?: DemoEvt[];
+}
+
+export interface MayaPositionResponse {
+  collateralUsd: number | null;
+  suppliedUsdc: number | null;
+  supplyApy: number | null;
+  debt: { symbol: string; amount: number }[];
+  error?: string;
+}

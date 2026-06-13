@@ -25,7 +25,7 @@ export function loomEnv(): LoomEnv | { error: string } {
   const providerAgentId = process.env.LOOM_PROVIDER_AGENT_ID;
   const providerAccountId = process.env.LOOM_PROVIDER_ACCOUNT_ID;
   const providerEndpointId = process.env.LOOM_PROVIDER_ENDPOINT_ID ?? 'loom_forge_endpoint';
-  const baseUrl = process.env.SLY_API_URL ?? 'http://localhost:4000';
+  const baseUrl = process.env.SLY_API_URL ?? 'https://sandbox.getsly.ai';
   if (!buyerToken || !buyerAgentId || !buyerAccountId || !providerToken || !providerAgentId) {
     return {
       error:

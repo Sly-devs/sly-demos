@@ -73,7 +73,7 @@ export interface AcsCheckoutResponse {
 
 export interface AdapterOptions {
   apiKey: string;
-  /** Sly API base (e.g. http://localhost:4000). */
+  /** Sly API base (e.g. https://sandbox.getsly.ai). */
   baseUrl?: string;
 }
 

@@ -39,7 +39,7 @@ const BUYER_NAMES = [
 
 export function helixClient() {
   const apiKey = process.env.HELIX_API_KEY ?? 'pk_test_helix_demo_2026';
-  const baseUrl = process.env.SLY_API_URL ?? 'http://localhost:4000';
+  const baseUrl = process.env.SLY_API_URL ?? 'https://sandbox.getsly.ai';
   return createDemoClient({ apiKey, baseUrl });
 }
 

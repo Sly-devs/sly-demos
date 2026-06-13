@@ -61,7 +61,7 @@ const CAIP2_NETWORK = CHAIN.caip2;
 const USDC_ADDRESS = CHAIN.usdc;
 const DEFAULT_MODEL = 'anthropic/claude-haiku-4.5';
 
-const SLY_BASE = process.env.SLY_API_URL ?? 'http://localhost:4000';
+const SLY_BASE = process.env.SLY_API_URL ?? 'https://sandbox.getsly.ai';
 const SLY_KEY = process.env.HUM_API_KEY ?? 'pk_test_hum_demo_2026';
 
 // Hum's own seller account in the Sly tenant — every inbound x402 payment

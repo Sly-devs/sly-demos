@@ -5,7 +5,7 @@ export function humEnv(): HumEnv | { error: string } {
   const agentToken = process.env.HUM_AGENT_TOKEN;
   const agentId = process.env.HUM_AGENT_ID;
   const accountId = process.env.HUM_ACCOUNT_ID;
-  const baseUrl = process.env.SLY_API_URL ?? 'http://localhost:4000';
+  const baseUrl = process.env.SLY_API_URL ?? 'https://sandbox.getsly.ai';
   if (!agentToken || !agentId || !accountId) return { error: 'Missing HUM_* env vars. Re-run seed-hum-demo.ts.' };
   return { tenantKey, agentToken, agentId, accountId, baseUrl };
 }

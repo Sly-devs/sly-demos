@@ -8,7 +8,7 @@ import { CRATE_MERCHANT_ID, CRATE_MERCHANT_NAME } from '@/lib/catalog';
  * Coral shopping agent and streams back the structured demo events.
  *
  * Config (set in apps/demo/crate-storefront/.env.local — see .env.example):
- *   SLY_API_URL          Sly API base (default http://localhost:4000)
+ *   SLY_API_URL          Sly API base (default https://sandbox.getsly.ai)
  *   CORAL_API_KEY        Coral tenant test key (pk_test_coral_demo_2026)
  *   CORAL_AGENT_ID       Coral Shopping Agent id (printed by seed-coral-demo)
  *   CORAL_ACCOUNT_ID     Maya's account id (printed by seed-coral-demo)
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
   const agentToken = process.env.CORAL_AGENT_TOKEN;
   const agentId = process.env.CORAL_AGENT_ID;
   const accountId = process.env.CORAL_ACCOUNT_ID;
-  const baseUrl = process.env.SLY_API_URL ?? 'http://localhost:4000';
+  const baseUrl = process.env.SLY_API_URL ?? 'https://sandbox.getsly.ai';
 
   if (!agentToken || !agentId || !accountId) {
     return NextResponse.json(

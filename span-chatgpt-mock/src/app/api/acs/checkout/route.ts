@@ -28,7 +28,7 @@ import {
  *   4. agent token → ACP completeCheckout (grant consumed, cross-tenant settle)
  *
  * Config (set in apps/demo/span-chatgpt-mock/.env.local — see .env.example):
- *   SLY_API_URL       Sly API base (default http://localhost:4000)
+ *   SLY_API_URL       Sly API base (default https://sandbox.getsly.ai)
  *   SPAN_API_KEY      Span tenant test key (pk_test_span_demo_2026)
  *   SPAN_AGENT_TOKEN  Claude Shopping Agent token (printed by seed-span-demo)
  *   SPAN_AGENT_ID     Claude Shopping Agent id (printed by seed-span-demo)

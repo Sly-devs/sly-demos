@@ -39,7 +39,7 @@ export function mayaEnv(): MayaEnv | { error: string } {
   const ownerEoa = process.env.MAYA_OWNER_EOA;
   const compassApiKeyAuth = process.env.COMPASS_API_KEY_AUTH;
   const compassBin = process.env.COMPASS_BIN;
-  const baseUrl = process.env.SLY_API_URL ?? 'http://localhost:4000';
+  const baseUrl = process.env.SLY_API_URL ?? 'https://sandbox.getsly.ai';
 
   const missing = [
     !tenantKey && 'MAYA_TENANT_KEY',

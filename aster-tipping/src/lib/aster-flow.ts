@@ -13,7 +13,7 @@ export function asterTipEnv(): AsterTipEnv | { error: string } {
   const agentToken = process.env.ASTER_AGENT_TOKEN;
   const agentId = process.env.ASTER_AGENT_ID;
   const accountId = process.env.ASTER_ACCOUNT_ID;
-  const baseUrl = process.env.SLY_API_URL ?? 'http://localhost:4000';
+  const baseUrl = process.env.SLY_API_URL ?? 'https://sandbox.getsly.ai';
   if (!agentToken || !agentId || !accountId) {
     return {
       error:

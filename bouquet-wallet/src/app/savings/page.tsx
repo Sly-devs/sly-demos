@@ -16,7 +16,7 @@ export default function Savings() {
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-elevate text-[14px] font-semibold text-cloud ring-1 ring-hairline">
           {MAYA.holder
             .split(' ')
-            .map((n) => n[0])
+            .map((n: string) => n[0])
             .join('')}
         </div>
       </header>

@@ -16,7 +16,7 @@ import { AGENTS, type Scenario, type AgentKey } from './scenarios';
 
 const SUPABASE_URL = process.env.SUPABASE_URL!;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const SLY_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const SLY_API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sandbox.getsly.ai';
 const SLY_TENANT_KEY = process.env.SLY_DEMO_TENANT_API_KEY || '';
 
 // Base venue allowlist that always stays on. Scenarios add/remove

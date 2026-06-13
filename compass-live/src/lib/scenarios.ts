@@ -414,7 +414,7 @@ export const SCENARIOS: Scenario[] = [
         fake: {
           leftLines: [
             'Sly × Compass MCP server running on stdio',
-            'Sly API: http://localhost:4000 | default chain: base',
+            'Sly API: https://sandbox.getsly.ai | default chain: base',
             '[agent→MCP] connected — 16 tools available',
             '[agent→MCP] (acting as TREASURY agent) calling governed_credit_borrow (owner 0x897Fb7…, amount 1.0 USDC)',
             '',
@@ -580,7 +580,7 @@ export const SCENARIOS: Scenario[] = [
         fake: {
           leftLines: [
             'Sly × Compass MCP server running on stdio',
-            'Sly API: http://localhost:4000 | default chain: hyperevm',
+            'Sly API: https://sandbox.getsly.ai | default chain: hyperevm',
             '[agent→MCP] connected — 16 tools available',
             '[agent→MCP] calling governed_perps_order (owner 0x897Fb7…, BTC buy 0.001)',
             '',

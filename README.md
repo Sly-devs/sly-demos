@@ -70,9 +70,11 @@ Every demo is its own top-level folder. Inside: source + `package.json` (a runna
 |---|---|
 | ✅ Source + screenshot + walkthrough video | `compass-live`, `coral-mobile` |
 | ✅ Source + screenshot (basic README) | every other demo above |
-| 🚧 Full runnable setup against public sandbox | rolling out — email `partnerships@getsly.ai` for the demo you want to spin up |
+| ✅ Points at public sandbox by default | every demo — `SLY_API_URL` defaults to `https://sandbox.getsly.ai` |
+| ✅ Per-demo `.env.example` listing exact env vars | every demo |
+| 🚧 Pre-provisioned demo tenant (drop-in tokens) | email `partnerships@getsly.ai` |
 
-The source for every demo is here today. Each one originally ran inside the internal Sly monorepo against a local API + Supabase; getting each one cleanly pointed at the public sandbox is a per-demo cleanup task we're working through.
+Every demo now defaults to the public Sly sandbox (`https://sandbox.getsly.ai`, Base Sepolia, no real money). To run end-to-end you need a tenant on that sandbox + at least one provisioned agent — email `partnerships@getsly.ai` for a Compass-ready demo tenant (agents + Compass venue allowlist already configured) or self-provision following the [SDK quickstart](https://docs.getsly.ai/quickstart).
 
 ## Install + run
 
@@ -88,7 +90,13 @@ pnpm --filter aster-tipping dev         # → http://localhost:3250
 # … (port for each demo is in its README)
 ```
 
-Copy `.env.example` → `.env.local` inside the demo directory and fill in your sandbox credentials before running.
+### Pointing at sandbox vs production
+
+Every demo defaults to `https://sandbox.getsly.ai`. Copy the demo's `.env.example` to `.env.local`, drop in your agent/account/API-key values, and run.
+
+To target production instead, set `SLY_API_URL=https://api.getsly.ai` in `.env.local` and use a `pk_live_…` tenant key.
+
+Each demo's `.env.example` lists exactly the env vars it expects — running `pnpm --filter <demo> dev` with empty placeholders fails loudly with the missing-var name so you can see what to fill in.
 
 ## Repo shape
 

@@ -8,7 +8,7 @@ import { LUME_MERCHANT_ID, LUME_MERCHANT_NAME } from '@/lib/catalog';
  * seeded Aster buyer agent and returns the structured demo events.
  *
  * Config (set in apps/demo/lume-goods/.env.local — see .env.example):
- *   SLY_API_URL          Sly API base (default http://localhost:4000)
+ *   SLY_API_URL          Sly API base (default https://sandbox.getsly.ai)
  *   ASTER_API_KEY        Aster tenant test key (pk_test_aster_demo_2026)
  *   ASTER_AGENT_ID       Buyer agent id (printed by seed-aster-demo)
  *   ASTER_ACCOUNT_ID     Buyer agent's account id (printed by seed-aster-demo)
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
   const agentToken = process.env.ASTER_AGENT_TOKEN;
   const agentId = process.env.ASTER_AGENT_ID;
   const accountId = process.env.ASTER_ACCOUNT_ID;
-  const baseUrl = process.env.SLY_API_URL ?? 'http://localhost:4000';
+  const baseUrl = process.env.SLY_API_URL ?? 'https://sandbox.getsly.ai';
 
   if (!agentToken || !agentId || !accountId) {
     return NextResponse.json(

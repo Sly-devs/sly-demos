@@ -7,7 +7,7 @@ export function barterEnv(): BarterEnv | { error: string } {
   const sellerToken = process.env.BARTER_SELLER_AGENT_TOKEN;
   const sellerId = process.env.BARTER_SELLER_AGENT_ID;
   const buyerAccountId = process.env.BARTER_BUYER_ACCOUNT_ID;
-  const baseUrl = process.env.SLY_API_URL ?? 'http://localhost:4000';
+  const baseUrl = process.env.SLY_API_URL ?? 'https://sandbox.getsly.ai';
   if (!buyerToken || !buyerId || !sellerToken || !sellerId || !buyerAccountId) return { error: 'Missing BARTER_* env vars. Re-run seed-barter-demo.ts.' };
   return { tenantKey, buyerToken, buyerId, sellerToken, sellerId, buyerAccountId, baseUrl };
 }

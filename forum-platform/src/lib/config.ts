@@ -9,7 +9,7 @@
  *    platform-fee leg, tax-withholding leg) — where settlement lands.
  */
 
-export const SLY_API_URL = process.env.SLY_API_URL ?? 'http://localhost:4000';
+export const SLY_API_URL = process.env.SLY_API_URL ?? 'https://sandbox.getsly.ai';
 
 // Forum operator tenant
 export const FORUM_API_KEY =
