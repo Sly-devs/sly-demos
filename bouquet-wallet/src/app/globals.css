@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, ui-sans-serif,
+    system-ui, sans-serif;
+}
+
+html,
+body {
+  background:
+    radial-gradient(circle at 15% 12%, rgba(244, 205, 196, 0.45) 0%, transparent 35%),
+    radial-gradient(circle at 88% 80%, rgba(201, 222, 197, 0.4) 0%, transparent 40%),
+    radial-gradient(circle at 85% 8%, rgba(240, 200, 120, 0.22) 0%, transparent 30%),
+    #fbf6ee;
+  color: theme('colors.ink');
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+.script {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+}
+
+.tabnums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Paper-card texture — subtle */
+.paper-card {
+  background-image:
+    radial-gradient(circle at 4px 4px, rgba(80, 50, 40, 0.04) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+/* Wax-seal stamp */
+.wax-seal {
+  background:
+    radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.35) 0%, transparent 30%),
+    radial-gradient(circle, #dd6b75 0%, #b3434f 75%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

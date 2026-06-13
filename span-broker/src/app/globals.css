@@ -1,0 +1,262 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Helvetica,
+    Arial, sans-serif;
+}
+
+html,
+body {
+  background: theme('colors.span.bg');
+  color: theme('colors.span.text');
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ambient broker-console glow behind the columns. */
+body {
+  background-image:
+    radial-gradient(
+      60rem 40rem at 18% -12%,
+      rgba(217, 119, 87, 0.08),
+      transparent 60%
+    ),
+    radial-gradient(
+      60rem 40rem at 82% -12%,
+      rgba(16, 163, 127, 0.08),
+      transparent 60%
+    ),
+    radial-gradient(
+      55rem 55rem at 50% 118%,
+      rgba(124, 156, 255, 0.08),
+      transparent 60%
+    );
+  background-attachment: fixed;
+}
+
+/* Timeline entry reveal — staggered, alive. */
+@keyframes span-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+    filter: blur(2px);
+  }
+  60% {
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.span-rise {
+  animation: span-rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Soft fade for transcript bubbles. */
+@keyframes span-fade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.span-fade {
+  animation: span-fade 0.42s ease-out both;
+}
+
+/* Pulsing connector dot while the broker is mid-flight. */
+@keyframes span-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.82);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.span-pulse {
+  animation: span-pulse 1.15s ease-in-out infinite;
+}
+
+/* Halo ring that radiates off the active timeline node. */
+@keyframes span-halo {
+  0% {
+    box-shadow: 0 0 0 0 rgba(124, 156, 255, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 9px rgba(124, 156, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(124, 156, 255, 0);
+  }
+}
+
+.span-halo {
+  animation: span-halo 1.5s ease-out infinite;
+}
+
+/* Live travelling pulse down the active rail. */
+@keyframes span-flow {
+  0% {
+    background-position: 0 -120%;
+  }
+  100% {
+    background-position: 0 120%;
+  }
+}
+
+.span-flow {
+  background-image:
+    linear-gradient(theme('colors.span.line'), theme('colors.span.line')),
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(124, 156, 255, 0.9) 45%,
+      rgba(124, 156, 255, 0.9) 55%,
+      transparent 100%
+    );
+  background-size:
+    100% 100%,
+    100% 60%;
+  background-repeat: no-repeat, no-repeat;
+  background-position:
+    0 0,
+    0 -120%;
+  animation: span-flow 1.05s linear infinite;
+}
+
+/* Static, completed rail segment. */
+.span-rail-done {
+  background: linear-gradient(
+    to bottom,
+    rgba(95, 210, 166, 0.55),
+    theme('colors.span.line')
+  );
+}
+
+/* Settlement-complete moment — a satisfying ring burst + glow. */
+@keyframes span-settle {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.span-settle {
+  animation: span-settle 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes span-burst {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.4);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+
+.span-burst {
+  animation: span-burst 0.9s ease-out both;
+}
+
+/* Protocol badge sheen as a step becomes active. */
+@keyframes span-sheen {
+  0% {
+    background-position: -150% 0;
+  }
+  100% {
+    background-position: 250% 0;
+  }
+}
+
+.span-sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: linear-gradient(
+    110deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.22) 50%,
+    transparent 65%
+  );
+  background-size: 250% 100%;
+  animation: span-sheen 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Working shimmer for the Run button. */
+@keyframes span-shimmer {
+  0% {
+    background-position: -120% 0;
+  }
+  100% {
+    background-position: 220% 0;
+  }
+}
+
+.span-shimmer {
+  background-image: linear-gradient(
+    110deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.14) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: span-shimmer 1.4s linear infinite;
+}
+
+/* Slow ambient breathing on the hero header accent. */
+@keyframes span-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.span-breathe {
+  animation: span-breathe 2.6s ease-in-out infinite;
+}
+
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}

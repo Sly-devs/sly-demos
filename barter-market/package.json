@@ -1,0 +1,27 @@
+{
+  "name": "barter-market",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Barter — A2A haggling market (offers, counters, accept) governed by Sly.",
+  "scripts": {
+    "dev": "next dev -p 3252",
+    "build": "next build",
+    "start": "next start -p 3252",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sly/demo-kit": "workspace:*",
+    "next": "^16.2.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.3.3"
+  }
+}

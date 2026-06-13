@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  background: theme('colors.base');
+  color: theme('colors.ink');
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Ambient indigo wash behind the console — subtle, fintech depth. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(
+      900px 500px at 78% -8%,
+      rgba(124, 122, 255, 0.08),
+      transparent 60%
+    ),
+    radial-gradient(
+      700px 400px at 0% 100%,
+      rgba(124, 122, 255, 0.04),
+      transparent 55%
+    );
+  pointer-events: none;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  font-feature-settings: 'tnum' 1;
+}
+
+::selection {
+  background: theme('colors.brand');
+  color: white;
+}
+
+/* Quiet, dark scrollbars to match the console chrome. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: theme('colors.line') transparent;
+}
+*::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: theme('colors.line');
+  border-radius: 9999px;
+}

@@ -4,6 +4,8 @@ Live two-pane operator demo. Left pane shows the agent's MCP-stdio output; right
 
 > Part of [Sly-devs/sly-demos](https://github.com/Sly-devs/sly-demos). For the integration architecture, see [`_docs/compass-architecture.md`](../_docs/compass-architecture.md).
 
+![cover](./screenshots/cover.png)
+
 ## Run it
 
 ```bash

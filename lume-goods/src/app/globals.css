@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background: theme('colors.cream');
+  color: theme('colors.umber');
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-serif);
+  font-feature-settings: 'liga' 1, 'kern' 1;
+}
+
+::selection {
+  background: theme('colors.terra');
+  color: theme('colors.parch');
+}
+
+/* Subtle paper grain on the page background for editorial warmth. */
+.lume-grain {
+  background-image: radial-gradient(
+    theme('colors.umber' / 3%) 0.5px,
+    transparent 0.5px
+  );
+  background-size: 22px 22px;
+}
+
+.lume-rule {
+  background-image: linear-gradient(
+    to right,
+    theme('colors.gilt') 0%,
+    theme('colors.gilt' / 0%) 70%
+  );
+}

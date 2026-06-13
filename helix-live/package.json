@@ -1,0 +1,30 @@
+{
+  "name": "helix-live",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Helix — live agentic-marketplace wall-board (Next.js, 4-protocol rails)",
+  "scripts": {
+    "dev": "next dev -p 3241",
+    "build": "next build",
+    "start": "next start -p 3241",
+    "typecheck": "tsc --noEmit",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@sly/demo-kit": "workspace:*",
+    "d3-force": "^3.0.0",
+    "next": "^16.2.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/d3-force": "^3.0.10",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.3.3"
+  }
+}

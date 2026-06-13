@@ -1,0 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Caveat:wght@500;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  background:
+    radial-gradient(900px 600px at 0% 0%, rgba(232,162,58,0.12) 0%, transparent 55%),
+    radial-gradient(900px 600px at 100% 100%, rgba(63,122,74,0.10) 0%, transparent 55%),
+    #fbf6ec;
+  color: #22241e;
+  font-family: 'Inter', system-ui, sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+.display { font-family: 'Caveat', cursive; }
+.serif { font-family: 'Fraunces', Georgia, serif; }
+.mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+.tabnums { font-variant-numeric: tabular-nums; }
+
+.dotgrid {
+  background-image: radial-gradient(circle, rgba(108,104,82,0.15) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

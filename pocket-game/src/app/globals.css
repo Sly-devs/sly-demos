@@ -1,0 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Press+Start+2P&family=JetBrains+Mono:wght@400;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  background:
+    radial-gradient(900px 600px at 50% 0%, rgba(255,67,164,0.12) 0%, transparent 55%),
+    radial-gradient(700px 500px at 0% 100%, rgba(66,216,255,0.10) 0%, transparent 55%),
+    #0a0223;
+  color: #f4f0ff;
+  font-family: 'Outfit', system-ui, sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+.display { font-family: 'Press Start 2P', system-ui, sans-serif; letter-spacing: 0.04em; }
+.mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+.tabnums { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
