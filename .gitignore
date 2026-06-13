@@ -5,6 +5,13 @@ dist
 build
 out
 
+# Exception: the vendored MCP-Compass server ships its compiled dist/ — that IS
+# the package's runtime entry, and there's no build step from the consumer's
+# side. Without this the workspace dep resolves to nothing and compass-live's
+# demo runner can't spawn the MCP wrapper.
+!_mcp-compass/dist
+!_mcp-compass/dist/**
+
 # Local env (never commit secrets)
 .env
 .env.local

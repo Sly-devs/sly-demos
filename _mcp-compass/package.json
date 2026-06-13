@@ -1,0 +1,31 @@
+{
+  "name": "@sly_ai/mcp-compass",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCP server that gates Compass Labs DeFi actions through Sly's policy engine — vendored into sly-demos for the compass-live runner.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./tools": {
+      "import": "./dist/tools.js",
+      "types": "./dist/tools.d.ts"
+    },
+    "./server-factory": {
+      "import": "./dist/server-factory.js",
+      "types": "./dist/server-factory.d.ts"
+    },
+    "./demo-agent-client.mjs": "./demo-agent-client.mjs",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "sly-mcp-compass": "./dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4"
+  }
+}

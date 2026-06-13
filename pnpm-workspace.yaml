@@ -1,5 +1,6 @@
 packages:
   - '_kit'
+  - '_mcp-compass'
   - 'anvil-reverse'
   - 'aster-acs-adapter'
   - 'aster-merchants'

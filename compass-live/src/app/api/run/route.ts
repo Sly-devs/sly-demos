@@ -21,6 +21,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { createClient } from '@supabase/supabase-js';
 import { createSession, pushEvent } from '@/lib/bus';
@@ -30,18 +31,29 @@ import { getScenario, scenarioSteps, type Scenario, type ScenarioStep } from '@/
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-function findRepoRoot(): string {
+// Resolve the vendored @sly_ai/mcp-compass demo client at REQUEST time so the
+// bundler doesn't try to statically include it as a module dep (it is spawned
+// as a child process, not imported). Walks up from CWD looking for the
+// vendored _mcp-compass/ workspace package; honors SLY_DEMOS_ROOT override.
+function resolveAgentClient(): { script: string; cwd: string } {
+  const envRoot = process.env.SLY_DEMOS_ROOT;
+  const candidates: string[] = [];
+  if (envRoot) candidates.push(envRoot);
   let dir = process.cwd();
-  for (let i = 0; i < 8; i++) {
-    if (dir.endsWith('/PayOS')) return dir;
+  for (let i = 0; i < 6; i++) {
+    candidates.push(dir);
     const parent = join(dir, '..');
     if (parent === dir) break;
     dir = parent;
   }
-  return process.cwd();
+  for (const c of candidates) {
+    const script = join(c, '_mcp-compass', 'demo-agent-client.mjs');
+    if (existsSync(script)) return { script, cwd: join(c, '_mcp-compass') };
+  }
+  throw new Error(
+    'Could not locate _mcp-compass/demo-agent-client.mjs. Set SLY_DEMOS_ROOT to the sly-demos repo root.',
+  );
 }
-const REPO_ROOT = findRepoRoot();
-const AGENT_CLIENT = join(REPO_ROOT, 'packages', 'mcp-compass', 'demo-agent-client.mjs');
 
 const SLY_API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sandbox.getsly.ai';
 const SLY_TENANT_KEY = process.env.SLY_DEMO_TENANT_API_KEY || '';
@@ -165,8 +177,9 @@ async function spawnAgentClient(
   step: ScenarioStep,
 ): Promise<AgentRunResult> {
   return new Promise((resolve) => {
-    const child = spawn('node', [AGENT_CLIENT], {
-      cwd: REPO_ROOT,
+    const { script, cwd: scriptCwd } = resolveAgentClient();
+    const child = spawn('node', [script], {
+      cwd: scriptCwd,
       env: {
         ...process.env,
         SLY_API_URL,

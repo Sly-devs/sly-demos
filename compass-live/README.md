@@ -10,11 +10,22 @@ Live two-pane operator demo. Left pane shows the agent's MCP-stdio output; right
 
 ```bash
 cp .env.example .env.local
-# Fill in the Sly sandbox + Compass credentials
+# Fill in the Sly sandbox + Compass credentials (see .env.example)
 pnpm install
 pnpm dev
 # → http://localhost:3270
 ```
+
+### Prerequisites
+
+- Node 20+ and pnpm
+- The `compass` CLI installed locally and authenticated (set `COMPASS_BIN` to its absolute path in `.env.local`)
+- A Sly sandbox tenant key (`pk_test_…`) + the three Compass-flow agent IDs/EOAs (request from `partnerships@getsly.ai` for the pre-provisioned partnership demo tenant — saves an hour of self-provisioning)
+- Bump file-descriptor limit before `pnpm dev` on macOS: `ulimit -n 65536` (Next.js's file watcher needs headroom; default 256 starves dynamic-route discovery)
+
+### MCP server (vendored)
+
+The two-pane runner spawns the Sly × Compass MCP server as a child process — `node $repo/_mcp-compass/demo-agent-client.mjs`. The `@sly_ai/mcp-compass` package is **vendored at the repo root in `_mcp-compass/`** and wired as a `workspace:*` dependency, not pulled from npm. Clones run as-is; no separate install step.
 
 ## What you see
 

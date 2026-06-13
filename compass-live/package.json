@@ -4,12 +4,13 @@
   "private": true,
   "description": "Sly × Compass — live two-pane operator demo (agent view + platform view, 8 governed scenarios).",
   "scripts": {
-    "dev": "next dev -p 3270",
-    "build": "next build",
+    "dev": "next dev --webpack -p 3270",
+    "build": "next build --webpack",
     "start": "next start -p 3270",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@sly_ai/mcp-compass": "workspace:*",
     "@supabase/supabase-js": "^2.47.10",
     "next": "^16.2.4",
     "react": "^19.0.0",
