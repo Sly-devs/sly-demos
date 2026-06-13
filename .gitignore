@@ -26,3 +26,6 @@ out
 # Recording artefacts (the recordings themselves live in compass/videos/)
 *.webm
 narrate-cache/
+
+# TypeScript incremental build cache
+*.tsbuildinfo

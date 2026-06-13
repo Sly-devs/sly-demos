@@ -2,7 +2,7 @@
 
 Live two-pane operator demo. Left pane shows the agent's MCP-stdio output; right pane shows every Sly policy gate that fires plus the exact `compass …` CLI invocation that gets shelled out on approve.
 
-> Part of [Sly-devs/demos](https://github.com/Sly-devs/demos). For the architecture + partnership context, see the [Compass collection README](../README.md).
+> Part of [Sly-devs/sly-demos](https://github.com/Sly-devs/sly-demos). For the architecture + partnership context, see the [Compass collection README](../README.md).
 
 ## Run it
 

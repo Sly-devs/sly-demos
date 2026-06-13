@@ -2,7 +2,7 @@
 
 Phone-framed mobile UI showing Maya — a user whose AI agent borrows USDC against her Aave collateral via Compass, governed by Sly.
 
-> Part of [Sly-devs/demos](https://github.com/Sly-devs/demos). For the architecture + partnership context, see the [Compass collection README](../README.md).
+> Part of [Sly-devs/sly-demos](https://github.com/Sly-devs/sly-demos). For the architecture + partnership context, see the [Compass collection README](../README.md).
 
 ## Run it
 

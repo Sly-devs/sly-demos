@@ -37,8 +37,8 @@ Each demo's `.env.example` lists the variables you need to fill in.
 
 ```bash
 # Clone
-git clone https://github.com/Sly-devs/demos.git
-cd demos
+git clone https://github.com/Sly-devs/sly-demos.git
+cd sly-demos
 
 # Install
 pnpm install
