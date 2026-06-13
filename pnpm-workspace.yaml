@@ -1,3 +1,4 @@
 packages:
-  - 'compass/compass-live'
-  - 'compass/coral-mobile'
+  - 'compass-live'
+  - 'coral-mobile'
+  # Add new demos at the top level — one folder per demo.

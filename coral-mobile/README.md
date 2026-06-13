@@ -2,7 +2,7 @@
 
 Phone-framed mobile UI showing Maya — a user whose AI agent borrows USDC against her Aave collateral via Compass, governed by Sly.
 
-> Part of [Sly-devs/sly-demos](https://github.com/Sly-devs/sly-demos). For the architecture + partnership context, see the [Compass collection README](../README.md).
+> Part of [Sly-devs/sly-demos](https://github.com/Sly-devs/sly-demos). For the integration architecture, see [`_docs/compass-architecture.md`](../_docs/compass-architecture.md).
 
 ## Run it
 
@@ -67,6 +67,6 @@ The position card (savings supply / APY / debt / Safe balance) reads via `GET /a
 
 ## Where to go next
 
-- The operator-side view of the same flow: [`../compass-live/`](../compass-live)
-- The narrated walkthrough: [`../videos/coral-compass-narrated.mp4`](../videos/coral-compass-narrated.mp4)
+- The operator-side view of the same flow: [`../compass-live/`](../compass-live/)
+- The narrated walkthrough: [`recordings/maya-borrow.mp4`](./recordings/maya-borrow.mp4)
 - The MCP wrapper underneath: [`@sly_ai/mcp-compass`](https://www.npmjs.com/package/@sly_ai/mcp-compass)

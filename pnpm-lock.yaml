@@ -8,7 +8,7 @@ importers:
 
   .: {}
 
-  compass/compass-live:
+  compass-live:
     dependencies:
       '@supabase/supabase-js':
         specifier: ^2.47.10
@@ -45,7 +45,7 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
-  compass/coral-mobile:
+  coral-mobile:
     dependencies:
       next:
         specifier: ^16.2.4

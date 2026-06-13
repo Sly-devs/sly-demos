@@ -2,7 +2,7 @@
 
 Live two-pane operator demo. Left pane shows the agent's MCP-stdio output; right pane shows every Sly policy gate that fires plus the exact `compass …` CLI invocation that gets shelled out on approve.
 
-> Part of [Sly-devs/sly-demos](https://github.com/Sly-devs/sly-demos). For the architecture + partnership context, see the [Compass collection README](../README.md).
+> Part of [Sly-devs/sly-demos](https://github.com/Sly-devs/sly-demos). For the integration architecture, see [`_docs/compass-architecture.md`](../_docs/compass-architecture.md).
 
 ## Run it
 
@@ -76,6 +76,6 @@ For the full architecture (MCP wrapper layout, step-up scope model, bilateral re
 
 ## Where to go next
 
-- The consumer-side view of the same machinery: [`../coral-mobile/`](../coral-mobile)
-- The narrated walkthrough: [`../videos/compass-live-narrated.mp4`](../videos/compass-live-narrated.mp4)
+- The consumer-side view of the same machinery: [`../coral-mobile/`](../coral-mobile/)
+- Narrated walkthroughs in [`recordings/`](./recordings) — `walkthrough.mp4` (long-form) plus short clips for autonomous-yield, borrow-and-pay, treasury-of-agents, perps-order
 - The npm package this wraps: [`@sly_ai/mcp-compass`](https://www.npmjs.com/package/@sly_ai/mcp-compass)
