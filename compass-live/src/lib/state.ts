@@ -22,8 +22,10 @@ const SLY_TENANT_KEY = process.env.SLY_DEMO_TENANT_API_KEY || '';
 // Base venue allowlist that always stays on. Scenarios add/remove
 // 'aave-credit:USDC' (credit borrow target) and 'equity:TSLAon'
 // (tokenized buy target) on top of this.
-const BASE_VENUES_CREDIT = ['aave-v3-base', 'morpho-base', 'aave-credit:WETH'];
-const BASE_VENUES_EARN = ['aave-v3-base', 'morpho-base'];
+const BASE_VENUES_CREDIT = ['aave-v3-base', 'morpho-base', 'aave-credit:WETH', 'compass-earn-account'];
+// `compass-earn-account` covers governed_earn_transfer (EOA → Compass Earn
+// Account staging) — needed by the multi_stage_and_deposit scenario.
+const BASE_VENUES_EARN = ['aave-v3-base', 'morpho-base', 'compass-earn-account'];
 
 function sb() {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -115,12 +117,17 @@ async function setAgentStatus(agent: AgentKey, status: 'active' | 'suspended'): 
 
 export async function setupScenario(scenario: Scenario): Promise<void> {
   const s = scenario.setup;
-  await setAgentStatus(s.agent, s.agentStatus);
+  // ORDER MATTERS: scopes must be issued/revoked BEFORE setting agent
+  // status, because Sly rejects grant issuance to a non-active agent
+  // ("Cannot issue grant to non-active agent (status: suspended)"). The
+  // deny_kill_switch scenario needs scopes=true AND status=suspended,
+  // which only works if we grant first then suspend.
   await setAllowlistForAgent(s.agent, s.usdcInAllowlist, s.tslaInAllowlist);
   for (const [scope, wanted] of Object.entries(s.scopes) as Array<[CompassScope, boolean]>) {
     if (wanted) await ensureActiveScope(s.agent, scope);
     else await revokeScope(s.agent, scope);
   }
+  await setAgentStatus(s.agent, s.agentStatus);
 }
 
 export async function restoreBaseline(): Promise<void> {
