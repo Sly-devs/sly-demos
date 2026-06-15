@@ -4,18 +4,16 @@
  * Each demo scenario needs a specific starting state on the Sly side
  * (compass:credit grant present-or-absent, allowlist with-or-without
  * USDC + TSLAon, agent active-or-suspended). These helpers run
- * server-side with the service-role Supabase key and the demo tenant's
- * API key, never client-side.
+ * server-side with the demo tenant's API key only — NO Supabase service-
+ * role key, NO RLS-bypass paths. Everything goes through the same Sly
+ * API endpoints a partner integration would use.
  *
  * All operations are idempotent — the goal is "scenario X starts with
  * the world in state Y", not "transition from current state Z".
  */
 
-import { createClient } from '@supabase/supabase-js';
 import { AGENTS, type Scenario, type AgentKey } from './scenarios';
 
-const SUPABASE_URL = process.env.SUPABASE_URL!;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const SLY_API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sandbox.getsly.ai';
 const SLY_TENANT_KEY = process.env.SLY_DEMO_TENANT_API_KEY || '';
 
@@ -27,92 +25,142 @@ const BASE_VENUES_CREDIT = ['aave-v3-base', 'morpho-base', 'aave-credit:WETH', '
 // Account staging) — needed by the multi_stage_and_deposit scenario.
 const BASE_VENUES_EARN = ['aave-v3-base', 'morpho-base', 'compass-earn-account'];
 
-function sb() {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error('Demo runner missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY in apps/demo/compass-live/.env.local');
-  }
-  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-}
-
-async function setAllowlistForAgent(agent: AgentKey, includesUsdcCredit: boolean, includesTsla: boolean): Promise<void> {
-  const client = sb();
-  // Only mutate the EOA / Circle wallet. The Compass-managed Safe has
-  // its own spending_policy (seeded once with the venues it supports
-  // including 'compass:withdraw') and shouldn't be re-stamped every
-  // scenario click — doing so would erase venues that aren't in the
-  // BASE_VENUES list.
-  const { data: wallets, error } = await client
-    .from('wallets')
-    .select('id, spending_policy')
-    .eq('managed_by_agent_id', AGENTS[agent].id)
-    .neq('wallet_type', 'smart_wallet');
-  if (error) throw new Error(`setAllowlist read failed: ${error.message}`);
-  const base = agent === 'credit' ? BASE_VENUES_CREDIT : BASE_VENUES_EARN;
-  for (const w of wallets ?? []) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sp: any = w.spending_policy ?? {};
-    const cp = sp.contractPolicy ?? {};
-    const allowed = [...base];
-    if (includesUsdcCredit) allowed.push('aave-credit:USDC');
-    if (includesTsla) allowed.push('equity:TSLAon');
-    const spending_policy = { ...sp, contractPolicy: { ...cp, allowedContractTypes: allowed } };
-    const { error: e2 } = await client.from('wallets').update({ spending_policy }).eq('id', w.id);
-    if (e2) throw new Error(`setAllowlist write failed: ${e2.message}`);
-  }
-}
-
 type CompassScope = 'compass:credit' | 'compass:tokenized';
 
-async function revokeScope(agent: AgentKey, scope: CompassScope): Promise<number> {
-  const client = sb();
-  const { data, error } = await client
-    .from('auth_scope_grants')
-    .update({ status: 'revoked', revoked_at: new Date().toISOString() })
-    .eq('agent_id', AGENTS[agent].id)
-    .eq('scope', scope)
-    .eq('status', 'active')
-    .select('id');
-  if (error) throw new Error(`revokeScope(${scope}) failed: ${error.message}`);
-  return data?.length ?? 0;
-}
-
-async function ensureActiveScope(agent: AgentKey, scope: CompassScope): Promise<string> {
-  const client = sb();
-  const { data: existing } = await client
-    .from('auth_scope_grants')
-    .select('id')
-    .eq('agent_id', AGENTS[agent].id)
-    .eq('scope', scope)
-    .eq('status', 'active')
-    .gt('expires_at', new Date().toISOString())
-    .limit(1);
-  if (existing && existing.length > 0) return existing[0].id;
-
-  const res = await fetch(`${SLY_API_URL}/v1/organization/scopes`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SLY_TENANT_KEY}` },
-    body: JSON.stringify({
-      agent_id: AGENTS[agent].id,
-      scope,
-      lifecycle: 'standing',
-      purpose: `Live demo: ${scope} action (standing, restorable across runs)`,
-      duration_minutes: 120,
-    }),
+/**
+ * Authed JSON fetch against the Sly API using the demo tenant key.
+ * Throws on non-2xx with the response body for diagnosis.
+ */
+async function slyFetch<T = unknown>(
+  path: string,
+  init?: { method?: string; body?: unknown },
+): Promise<T> {
+  const res = await fetch(`${SLY_API_URL}${path}`, {
+    method: init?.method ?? 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${SLY_TENANT_KEY}`,
+    },
+    ...(init?.body !== undefined ? { body: JSON.stringify(init.body) } : {}),
   });
   if (!res.ok) {
-    const t = await res.text().catch(() => '');
-    throw new Error(`issue ${scope} grant failed (${res.status}): ${t.slice(0, 200)}`);
+    const text = await res.text().catch(() => '');
+    throw new Error(`${init?.method ?? 'GET'} ${path} → ${res.status}: ${text.slice(0, 200)}`);
   }
-  const body = (await res.json()) as { data?: { grant_id?: string }; grant_id?: string };
+  return res.json() as Promise<T>;
+}
+
+/**
+ * Set the EOA / Circle wallet's venue allowlist for a scenario.
+ *
+ * Uses `PUT /v1/agents/:agentId/wallet/policy` which merges the supplied
+ * partial policy with the existing one (preserves spend counters etc.),
+ * so we only need to send the contractPolicy slice we're changing.
+ *
+ * NOTE: this updates the agent's primary wallet only. The Compass-managed
+ * Safe (if any) has its own spending policy seeded once with the venues
+ * it supports; we don't re-stamp it from here.
+ */
+async function setAllowlistForAgent(
+  agent: AgentKey,
+  includesUsdcCredit: boolean,
+  includesTsla: boolean,
+): Promise<void> {
+  const base = agent === 'credit' ? BASE_VENUES_CREDIT : BASE_VENUES_EARN;
+  const allowed = [...base];
+  if (includesUsdcCredit) allowed.push('aave-credit:USDC');
+  if (includesTsla) allowed.push('equity:TSLAon');
+  await slyFetch(`/v1/agents/${AGENTS[agent].id}/wallet/policy`, {
+    method: 'PUT',
+    body: {
+      contractPolicy: { allowedContractTypes: allowed },
+    },
+  });
+}
+
+interface ScopeGrant {
+  id: string;
+  agent_id: string;
+  scope: string;
+  status: string;
+  expires_at?: string | null;
+}
+
+/**
+ * Revoke every active grant of (agent, scope). Returns the count revoked.
+ *
+ * Tactic: list active grants filtered by agent_id, filter client-side to
+ * the target scope, DELETE each. The Sly API doesn't have a bulk-revoke
+ * by (agent_id, scope) so we do this in two steps.
+ */
+async function revokeScope(agent: AgentKey, scope: CompassScope): Promise<number> {
+  const list = await slyFetch<{ grants: ScopeGrant[] }>(
+    `/v1/organization/scopes?agent_id=${encodeURIComponent(AGENTS[agent].id)}`,
+  );
+  const matching = (list.grants ?? []).filter(
+    (g) => g.scope === scope && g.status === 'active',
+  );
+  for (const g of matching) {
+    await slyFetch(`/v1/organization/scopes/${g.id}`, { method: 'DELETE' });
+  }
+  return matching.length;
+}
+
+/**
+ * Make sure (agent, scope) has an active standing grant. Returns the grant id.
+ * If a usable grant already exists, returns it without issuing a new one.
+ */
+async function ensureActiveScope(agent: AgentKey, scope: CompassScope): Promise<string> {
+  const list = await slyFetch<{ grants: ScopeGrant[] }>(
+    `/v1/organization/scopes?agent_id=${encodeURIComponent(AGENTS[agent].id)}`,
+  );
+  const now = new Date().toISOString();
+  const existing = (list.grants ?? []).find(
+    (g) =>
+      g.scope === scope &&
+      g.status === 'active' &&
+      (!g.expires_at || g.expires_at > now),
+  );
+  if (existing) return existing.id;
+
+  const body = await slyFetch<{ data?: { grant_id?: string }; grant_id?: string }>(
+    '/v1/organization/scopes',
+    {
+      method: 'POST',
+      body: {
+        agent_id: AGENTS[agent].id,
+        scope,
+        lifecycle: 'standing',
+        purpose: `Live demo: ${scope} action (standing, restorable across runs)`,
+        duration_minutes: 120,
+      },
+    },
+  );
   const grantId = body?.data?.grant_id ?? body?.grant_id;
   if (!grantId) throw new Error(`issue ${scope}: missing grant_id in response`);
   return grantId;
 }
 
-async function setAgentStatus(agent: AgentKey, status: 'active' | 'suspended'): Promise<void> {
-  const client = sb();
-  const { error } = await client.from('agents').update({ status }).eq('id', AGENTS[agent].id);
-  if (error) throw new Error(`setAgentStatus failed: ${error.message}`);
+/**
+ * Flip an agent's active/suspended status via the dedicated endpoints.
+ * `/suspend` and `/activate` are both idempotent (suspend returns a
+ * "already suspended" 400 if the agent is already suspended) — we swallow
+ * that case to keep setupScenario idempotent.
+ */
+async function setAgentStatus(
+  agent: AgentKey,
+  status: 'active' | 'suspended',
+): Promise<void> {
+  const path = `/v1/agents/${AGENTS[agent].id}/${status === 'suspended' ? 'suspend' : 'activate'}`;
+  try {
+    await slyFetch(path, { method: 'POST' });
+  } catch (e) {
+    const msg = String(e instanceof Error ? e.message : e);
+    // The endpoints throw 400 with a clear "already X" message — treat
+    // as success to preserve idempotency.
+    if (/already (suspended|active)/i.test(msg)) return;
+    throw e;
+  }
 }
 
 export async function setupScenario(scenario: Scenario): Promise<void> {

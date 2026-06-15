@@ -23,7 +23,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { createClient } from '@supabase/supabase-js';
 import { createSession, pushEvent } from '@/lib/bus';
 import { setupScenario, restoreBaseline } from '@/lib/state';
 import { getScenario, scenarioSteps, type Scenario, type ScenarioStep } from '@/lib/scenarios';
@@ -422,16 +421,36 @@ function shortTx(tx: string | null | undefined): string {
 async function fetchAuditRow(
   evaluationId: string,
 ): Promise<{ signature: string | null; signed_at: string | null; action: string; actor_type: string } | null> {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return null;
-  const sb = createClient(url, key);
-  const { data } = await sb
-    .from('audit_log')
-    .select('signature, signed_at, action, actor_type')
-    .eq('entity_id', evaluationId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  return (data as { signature: string | null; signed_at: string | null; action: string; actor_type: string } | null) ?? null;
+  // Uses the public tenant-scoped audit endpoint (signed bundle exposed
+  // for offline re-verification). Bearer token = tenant key, no Supabase
+  // service-role access required.
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sandbox.getsly.ai';
+  const tenantKey = process.env.SLY_DEMO_TENANT_API_KEY || '';
+  try {
+    const url =
+      `${apiUrl}/v1/audit/log/by-entity` +
+      `?entity_type=policy_evaluation` +
+      `&entity_id=${encodeURIComponent(evaluationId)}` +
+      `&limit=1`;
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${tenantKey}` },
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { rows?: Array<{
+      action: string;
+      actor_type: string;
+      signed_at: string | null;
+      signature_b64: string | null;
+    }> };
+    const row = body?.rows?.[0];
+    if (!row) return null;
+    return {
+      action: row.action,
+      actor_type: row.actor_type,
+      signed_at: row.signed_at,
+      signature: row.signature_b64,
+    };
+  } catch {
+    return null;
+  }
 }
