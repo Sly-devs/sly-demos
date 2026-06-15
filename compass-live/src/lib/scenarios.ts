@@ -24,6 +24,7 @@ export type ScenarioId =
   // gated by Sly independently. The right pane numbers them [step k/N].
   | 'multi_autonomous_yield'
   | 'multi_borrow_and_pay'
+  | 'multi_stage_and_deposit'
   // Faked previews — the underlying primitive (hierarchical agent
   // delegation, perps execute, etc.) isn't built in v1, but we want
   // the demo to show the operator what the flow will look like. Each
@@ -80,7 +81,7 @@ const COMPASS_FLAGS = '-o json --no-interactive';
 export interface ScenarioStep {
   label: string;       // shown as "[step k/N] <label>" on both panes
   description?: string; // longer subtitle for the right pane banner
-  tool: 'governed_earn_deposit' | 'governed_earn_withdraw' | 'governed_earn_swap' | 'governed_credit_borrow' | 'governed_tokenized_buy' | 'governed_compass_withdraw' | 'governed_perps_order';
+  tool: 'governed_earn_deposit' | 'governed_earn_withdraw' | 'governed_earn_swap' | 'governed_earn_transfer' | 'governed_credit_borrow' | 'governed_tokenized_buy' | 'governed_compass_withdraw' | 'governed_perps_order';
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   args: Record<string, any>;
   // Render the exact compass invocation that the wrapper would (and
@@ -322,6 +323,53 @@ export const SCENARIOS: Scenario[] = [
         },
         buildCli() {
           return `compass earn manage --action DEPOSIT --venue aave-v3-base --amount 0.05 --owner ${AGENTS.earn.eoa} --chain base ${COMPASS_FLAGS}`;
+        },
+      },
+    ],
+  },
+
+  {
+    id: 'multi_stage_and_deposit',
+    label: 'Stage-and-deposit · Earn Account',
+    sub: '2 steps: EOA → Earn Account → Morpho · each Sly-gated independently',
+    tone: 'good',
+    expected: 'approve',
+    // Earn agent — same as happy_earn_deposit, no step-up scope needed.
+    // Requires `compass-earn-account` in the venue allowlist (added in
+    // seed-compass-demo.ts).
+    setup: { agent: 'earn', agentStatus: 'active', scopes: {}, usdcInAllowlist: true, tslaInAllowlist: true },
+    steps: [
+      {
+        label: 'Stage $0.10 USDC EOA → Earn Account',
+        description:
+          "Compass's new 2-step model: `compass earn manage` only moves funds BETWEEN the Earn Account and a venue — it doesn't pull from the EOA. The agent stages first. Sly gates the staging hop as its own decision: venue='compass-earn-account', amount within KYA T1 cap.",
+        tool: 'governed_earn_transfer',
+        args: {
+          agent_id: AGENTS.earn.id,
+          owner: AGENTS.earn.eoa,
+          chain: 'base',
+          amount: '0.1',
+        },
+        buildCli() {
+          return `compass earn transfer --action DEPOSIT --token USDC --amount 0.1 --owner ${AGENTS.earn.eoa} --chain base ${COMPASS_FLAGS}`;
+        },
+      },
+      {
+        label: 'Deposit $0.05 USDC Earn Account → Morpho vault',
+        description:
+          'Same dollar pool, second governed call. With the Earn Account now funded, `earn manage` lands in the yield vault. Independent policy decision + audit row.',
+        tool: 'governed_earn_deposit',
+        args: {
+          agent_id: AGENTS.earn.id,
+          owner: AGENTS.earn.eoa,
+          chain: 'base',
+          amount: '0.05',
+          venue_type: 'morpho-base',
+          vault_address: MORPHO_USDC_VAULT_BASE,
+        },
+        buildCli() {
+          const v = JSON.stringify({ type: 'VAULT', vault_address: MORPHO_USDC_VAULT_BASE });
+          return `compass earn manage --action DEPOSIT --venue '${v}' --amount 0.05 --owner ${AGENTS.earn.eoa} --chain base ${COMPASS_FLAGS}`;
         },
       },
     ],
