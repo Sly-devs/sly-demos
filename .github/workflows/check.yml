@@ -1,0 +1,31 @@
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Catches "added a new env var in src/ but forgot to document it in
+      # .env.example" — see scripts/check-env-examples.mjs for the rule set.
+      - name: Check .env.example completeness
+        run: pnpm check:env
+
+      - name: Typecheck all demos
+        run: pnpm typecheck

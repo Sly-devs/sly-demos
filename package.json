@@ -4,7 +4,9 @@
   "private": true,
   "description": "Public partner-facing demos for Sly. The agentic economy platform.",
   "scripts": {
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "check:env": "node scripts/check-env-examples.mjs",
+    "check": "pnpm typecheck && pnpm check:env"
   },
   "engines": {
     "node": ">=22"
