@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import {
   createCompassMcpServer
-} from "./chunk-MYQRDIOB.js";
+} from "./chunk-KQZYEGTD.js";
 import {
   tools
-} from "./chunk-4IWZ6INF.js";
+} from "./chunk-CSELGNUX.js";
 
 // src/index.ts
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
