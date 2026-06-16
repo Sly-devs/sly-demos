@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ApprovalSheet } from './maya-flow';
+import { fmtUsdc } from '@/lib/demo';
 
 type Phase =
   | 'idle'                 // agent message visible, no work in flight
@@ -142,15 +143,11 @@ export function CreditCheckoutCard() {
     displayBudget: '150',
     asset: 'USDC',
   };
-  // Always render two decimals — "$145.00" reads as a real shopping
-  // price; "$145" can look like a placeholder.
-  const fmtUsd = (raw: string | undefined) =>
-    `$${Number(raw ?? 0).toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-  const priceLabel = fmtUsd(product.displayAmount ?? product.amount);
-  const budgetLabel = fmtUsd(product.displayBudget ?? '150');
+  // Always 2 decimals + "USDC" suffix — Maya's holding stablecoin, not
+  // dollars, and labeling it as such makes the demo honest about the
+  // rail. Casual ask in the user bubble drops the decimals.
+  const priceLabel = fmtUsdc(product.displayAmount ?? product.amount);
+  const budgetLabel = fmtUsdc(product.displayBudget ?? '150');
 
   return (
     <section className="mt-6 px-5">
@@ -165,7 +162,7 @@ export function CreditCheckoutCard() {
       <div className="mt-3 flex justify-end">
         <div className="max-w-[80%] rounded-[1.2rem] rounded-tr-[6px] bg-coral/15 px-4 py-2.5 ring-1 ring-coral/25">
           <p className="text-[13px] leading-relaxed text-cloud">
-            Find me running shoes under ${product.displayBudget ?? '150'}.
+            Find me running shoes under {product.displayBudget ?? '150'} USDC.
           </p>
         </div>
       </div>

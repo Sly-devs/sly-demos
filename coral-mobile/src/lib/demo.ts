@@ -26,6 +26,22 @@ export function displayUsdc(real: number | string | undefined | null): number {
   return n * DEMO_SCALE;
 }
 
+/** Format a scaled USDC amount with two decimals — "1,450.00 USDC".
+ * Matches the approval-sheet styling; pass `withSuffix: false` when
+ * embedding inside a layout that prints "USDC" separately. */
+export function fmtUsdc(
+  scaled: number | string | undefined | null,
+  opts: { withSuffix?: boolean } = {},
+): string {
+  const { withSuffix = true } = opts;
+  const n = scaled == null ? 0 : typeof scaled === 'string' ? Number(scaled) : scaled;
+  const num = (Number.isFinite(n) ? n : 0).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return withSuffix ? `${num} USDC` : num;
+}
+
 /* ── Maya's Compass DeFi (Savings & Credit) story ───────────────── */
 
 export const MAYA = {
