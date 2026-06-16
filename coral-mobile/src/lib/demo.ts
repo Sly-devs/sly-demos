@@ -75,6 +75,10 @@ export interface MayaPositionResponse {
     balance: number;
     currency: string;
   };
+  // Compass succeeded but Maya has no Aave supply yet — fresh tenant
+  // that hasn't run the compass-live Onboard agent scenario. Drives an
+  // empty-state hero on the savings card instead of seed fallback.
+  empty?: boolean;
   error?: string;
 }
 
