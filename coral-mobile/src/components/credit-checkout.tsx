@@ -135,14 +135,11 @@ export function CreditCheckoutCard() {
       </h2>
 
       {/* Agent message — chat-bubble style. The agent surfaces the
-          spend, Maya taps to consent. */}
+          spend, Maya taps to consent. Online-status dot lives on the
+          "Your DeFi Agent" card above; not repeated here. */}
       <div className="mt-3 flex items-start gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-coral/15 text-[16px] ring-1 ring-coral/30">
           🏦
-          <span
-            className="absolute -mt-7 ml-6 h-2 w-2 rounded-full bg-mint ring-2 ring-canvas"
-            aria-hidden
-          />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
