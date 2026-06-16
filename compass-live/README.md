@@ -38,9 +38,14 @@ since they share the same agent set.
 - The `compass` CLI installed locally and authenticated (set `COMPASS_BIN` to its absolute path in `.env.local`). Install: `curl -fsSL https://compasslabs.ai/install.sh | bash`
 - Bump file-descriptor limit before `pnpm dev` on macOS: `ulimit -n 65536` (Next.js's file watcher needs headroom; default 256 starves dynamic-route discovery)
 
-### Note for the Coral × Compass demo
+### Pairing with the Coral × Compass demo
 
-If you're also running `../coral-mobile`, include `"coral_compass":true` in the onboarding payload. The endpoint enables `usdc_faucet` for your tenant and pre-drips a small amount of ETH + USDC to your Credit Agent's EOA. To actually deploy the Compass Credit Safe + supply USDC to Aave V3 as collateral (which Coral's savings card reads), run the `Onboard agent` scenario in this demo once after onboarding completes — that step uses the Compass CLI to deploy your Safes interactively.
+`pnpm onboard` provisions both demos by default, so the same three agents power `compass-live` and `../coral-mobile`. The onboarding endpoint enables `usdc_faucet`, pre-drips a small amount of ETH + USDC to the Credit Agent's EOA, and writes every agent's id/EOA to `.env.local`. To actually deploy the Compass Credit Safe and seed it with Aave V3 collateral (the on-chain state Coral's savings card reads), run two scenarios in this demo once after onboarding completes:
+
+1. **Onboard agent · 3-surface Compass setup** — deploys your Earn, Credit, and Tokenized Safes via the Compass CLI. Each step is Sly-gated independently. After this, the Credit Safe address is the EOA's per-owner Safe on Base.
+2. **Seed Aave collateral · supply $X USDC** — atomic Safe tx that supplies USDC and takes a minimum-size borrow against it, so the Safe shows up in Aave V3 as a live position.
+
+Use `pnpm onboard -- --compass-only` if you don't want the Coral extras.
 
 ### MCP server (vendored)
 
@@ -76,6 +81,25 @@ Eight scenarios, click any to fire it. The left pane streams `demo-agent-client.
 | Denied · operator kill-switch | Kill-switch precheck stops the call — engine NOT invoked |
 
 On every deny, the right pane shows `[exec-blocked] $ compass …` — the literal command that *would* have run, locked in red. The CLI never reaches Compass.
+
+## What we actually call from Compass
+
+Every scenario shells out to the `compass` CLI in `--no-interactive -o json` mode after Sly approves. The wrapper at `@sly_ai/mcp-compass` is what owns these invocations — this table is the exhaustive list of subcommands the demo touches, mapped from the governed-action specs in `packages/mcp-compass/src/governed-actions.ts`:
+
+| Governed tool (MCP) | Compass subcommand | What Compass returns | Broadcast |
+|---|---|---|---|
+| `governed_earn_create_account` | `compass earn create-account --chain base --owner <eoa> --sender <eoa>` | Unsigned EVM tx that deploys the Earn Safe proxy | Sly executes via CDP `sendTransaction` |
+| `governed_credit_create_account` | `compass credit create-account --chain base --owner <eoa> --sender <eoa>` | Unsigned EVM tx that deploys the Credit Safe proxy | Sly executes via CDP `sendTransaction` |
+| `governed_tokenized_create_account` | `compass tokenized-equities create-account --owner <eoa> --sender <eoa>` | Unsigned EVM tx that deploys the Tokenized Safe proxy | Sly executes via CDP `sendTransaction` |
+| `governed_earn_transfer` | `compass earn transfer --action DEPOSIT --token <T> --amount <A> --owner <eoa> --chain base` | Plain `USDC.transfer(EarnSafe, A)` to fund the Earn Safe | Sly executes via CDP |
+| `governed_earn_deposit` | `compass earn manage --action DEPOSIT --venue '{type:VAULT,vault_address:…}' --amount <A> --owner <eoa> --chain base` | Safe execTransaction depositing into a Morpho vault | Sly executes via CDP |
+| `governed_earn_withdraw` | `compass earn manage --action WITHDRAW --venue '{type:VAULT,vault_address:…}' --amount <A> --owner <eoa> --chain base` | Safe execTransaction withdrawing from the vault | Sly executes via CDP |
+| `governed_credit_borrow` | `compass credit borrow --borrow-token <T> --borrow-amount <A> --owner <eoa> --chain base` *(optional `--token-in --collateral-token --amount-in` for atomic supply+borrow)* | Safe execTransaction against Aave V3 — borrow only, or supply-then-borrow as one tx | Sly executes via CDP *(when gas-sponsorship is off)* |
+| `governed_compass_withdraw` | `compass credit transfer --action WITHDRAW --token <T> --amount <A> --owner <eoa> --chain base` | Safe execTransaction moving funds out of the Credit Safe back to the EOA | Sly executes via CDP |
+| `governed_tokenized_buy` | `compass tokenized-equities order --from-token USDC --to-token <SYMBOL> --amount <A> --owner <eoa>` | EIP-712 order payload to buy Ondo tokenized equity | Caller-signed (not auto-broadcast) |
+| `governed_perps_order` *(FAKED PREVIEW)* | `compass global-markets-perps market-order --asset <X> --side <S> --size <N> --owner <eoa>` | Hyperliquid order (signature scheme is on Compass's roadmap) | Stubbed in the demo |
+
+Every state-changing call goes `agent → MCP wrapper → POST /v1/policy/evaluate-intent → (Sly approves) → shell: compass … → POST /v1/policy/execute-intent (if executable)`. On deny, the `compass …` shell-out is the line that gets blocked — the binary is never invoked. On approve, the returned Safe / EVM tx is signed and broadcast by Sly's CDP wallet for the calling EOA; Permit2 / EIP-712 surfaces (tokenized, future perps) return a signable payload instead.
 
 ## How a scenario click flows
 
