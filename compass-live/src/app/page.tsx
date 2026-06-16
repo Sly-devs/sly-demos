@@ -28,6 +28,7 @@ interface PickableAgent {
   walletAddress: string | null;
   hasCompassAllowlist: boolean;
   ethBalanceWei: string | null;
+  gasSponsored: boolean;
 }
 
 const PICKER_STORAGE_KEY = 'compass-live:selectedAgentId';
@@ -39,7 +40,8 @@ const MIN_GAS_WEI = BigInt('300000000000000');
 const WEI_PER_ETH = BigInt('1000000000000000000');
 
 function isUnderGassed(a: PickableAgent | null): boolean {
-  if (!a || !a.ethBalanceWei) return false;
+  // Compass-sponsored smart wallets never need gas drips.
+  if (!a || a.gasSponsored || !a.ethBalanceWei) return false;
   try { return BigInt(a.ethBalanceWei) < MIN_GAS_WEI; } catch { return false; }
 }
 
@@ -447,14 +449,21 @@ function AgentPicker({
                     <span className="text-emerald-400">Compass-ready</span>
                   </>
                 )}
-                {selectedAgent.ethBalanceWei !== null && (
+                {selectedAgent.gasSponsored ? (
+                  <>
+                    <span>·</span>
+                    <span className="text-sky-400" title="Compass relayer sponsors gas — no ETH needed">
+                      gas sponsored
+                    </span>
+                  </>
+                ) : selectedAgent.ethBalanceWei !== null ? (
                   <>
                     <span>·</span>
                     <span className={needsFunding ? 'text-amber-400' : 'text-slate-400'}>
                       {formatEth(selectedAgent.ethBalanceWei)} ETH
                     </span>
                   </>
-                )}
+                ) : null}
               </div>
             </>
           ) : (
