@@ -20,9 +20,9 @@ import { NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const SLY_API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sandbox.getsly.ai';
+const SLY_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 const SLY_TENANT_KEY =
-  process.env.SLY_DEMO_TENANT_API_KEY || '';
+  process.env.SLY_DEMO_TENANT_API_KEY || 'pk_test_compass_demo_2026';
 
 const COMPASS_VENUES = new Set([
   'aave-v3-base',
@@ -52,7 +52,18 @@ interface AgentRow {
   walletProvider: string | null;
   walletAddress: string | null;
   hasCompassAllowlist: boolean;
+  // On-chain gas state — populated by an RPC balanceOf-style call on
+  // the wallet address. Used by the picker to surface "needs gas" badge.
+  // Wei as decimal string; null when no wallet or RPC failure.
+  ethBalanceWei: string | null;
 }
+
+// Threshold below which the picker considers the agent under-gassed and
+// surfaces the "Fund agent" CTA. ~0.0003 ETH covers a Morpho deposit on Base.
+// (Server-side reference; the actual badge threshold lives in page.tsx so
+// it can refresh without a server round-trip.)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const MIN_GAS_WEI = BigInt('300000000000000');
 
 async function slyGet<T>(path: string): Promise<T> {
   const res = await fetch(`${SLY_API_URL}${path}`, {
@@ -96,6 +107,7 @@ async function annotate(a: AgentDto): Promise<AgentRow> {
     walletProvider: null,
     walletAddress: null,
     hasCompassAllowlist: false,
+    ethBalanceWei: null,
   };
   try {
     const w = await slyGet<{
@@ -120,6 +132,42 @@ async function annotate(a: AgentDto): Promise<AgentRow> {
   return base;
 }
 
+/**
+ * Batch ETH-balance check for every agent's wallet address. One eth_getBalance
+ * RPC per address; we pool 20 in flight at a time so a 658-agent tenant
+ * doesn't get rate-limited by the public Base RPC.
+ */
+async function annotateEthBalances(rows: AgentRow[]): Promise<void> {
+  const RPC_URL = 'https://mainnet.base.org';
+  const targets = rows.filter((r) => r.walletAddress);
+  for (let i = 0; i < targets.length; i += 20) {
+    const batch = targets.slice(i, i + 20);
+    await Promise.all(
+      batch.map(async (row) => {
+        try {
+          const res = await fetch(RPC_URL, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              id: 1,
+              method: 'eth_getBalance',
+              params: [row.walletAddress, 'latest'],
+            }),
+          });
+          const body = (await res.json()) as { result?: string };
+          if (body.result) {
+            row.ethBalanceWei = BigInt(body.result).toString();
+          }
+        } catch {
+          // Leave ethBalanceWei null on RPC failure — the picker
+          // surfaces it as "unknown" rather than blocking.
+        }
+      }),
+    );
+  }
+}
+
 export async function GET() {
   try {
     const agents = await fetchAllAgents();
@@ -138,6 +186,11 @@ export async function GET() {
         (r.status === 'active' ? 1 : 0);
       return score(b) - score(a) || a.name.localeCompare(b.name);
     });
+    // ETH balance for the visible top of the list. Cap at 50 — full-tenant
+    // ETH probing is wasted bandwidth when the picker only shows a handful
+    // by default. Partners scrolling further will see balance load when
+    // they re-fetch.
+    await annotateEthBalances(rows.slice(0, 50));
     return NextResponse.json({ agents: rows });
   } catch (err) {
     return NextResponse.json(
