@@ -37,7 +37,15 @@ interface ConfirmResponse {
   phase: 'settled' | 'error';
   receipts?: CheckoutReceipt[];
   events?: { kind: string; label: string }[];
-  product?: { sku: string; label: string; merchant: string; amount: string; asset: string };
+  product?: {
+    sku: string;
+    label: string;
+    merchant: string;
+    amount: string;
+    displayAmount?: string;
+    displayBudget?: string;
+    asset: string;
+  };
   merchant?: { name: string; address: string; agentName: string };
   error?: string;
   step?: string;
@@ -121,12 +129,16 @@ export function CreditCheckoutCard() {
   }
 
   const product = response?.product ?? {
-    sku: 'trail-runner-weekly',
-    label: 'Trail Runner Subscription',
-    merchant: 'TrailCo',
+    sku: 'nike-pegasus-41',
+    label: 'Nike Pegasus 41',
+    merchant: 'Nike',
     amount: '0.10',
+    displayAmount: '145',
+    displayBudget: '150',
     asset: 'USDC',
   };
+  const priceLabel = `$${product.displayAmount ?? product.amount}`;
+  const budgetLabel = `$${product.displayBudget ?? '150'}`;
 
   return (
     <section className="mt-6 px-5">
@@ -151,7 +163,7 @@ export function CreditCheckoutCard() {
           <div className="mt-2 rounded-[1.2rem] rounded-tl-[6px] bg-surface px-4 py-3 ring-1 ring-hairline">
             {phase === 'settled' ? (
               <p className="text-[13px] leading-relaxed text-cloud">
-                Done — paid <span className="font-semibold">{product.merchant}</span> {product.amount} {product.asset} from your Aave credit line. Your dollar of collateral is{' '}
+                Done — paid <span className="font-semibold">{product.merchant}</span> {priceLabel} from your Aave credit line. Your savings are{' '}
                 <span className="font-semibold text-mint">still earning</span>. The bar above shows the debt I just took on for you.
               </p>
             ) : phase === 'error' ? (
@@ -161,11 +173,13 @@ export function CreditCheckoutCard() {
             ) : (
               <>
                 <p className="text-[13px] leading-relaxed text-cloud">
-                  Found your weekly subscription. Want me to cover it with your{' '}
+                  You asked for shoes under {budgetLabel}. Found the{' '}
+                  <span className="font-semibold text-cloud">{product.label}</span> at{' '}
+                  <span className="font-semibold">{priceLabel}</span> — want me to pay with your{' '}
                   <span className="font-semibold text-coral">Aave credit line</span>?
-                  Your $1 collateral keeps earning — I'll just take on a small loan against it.
+                  Your savings keep earning — I'll just take on a small loan against them.
                 </p>
-                <ProductPill product={product} />
+                <ProductPill product={product} priceLabel={priceLabel} />
               </>
             )}
           </div>
@@ -178,7 +192,7 @@ export function CreditCheckoutCard() {
                 activeStep={activeStep}
                 phase={phase}
                 receipt={response?.receipts?.[0]}
-                label={`Borrow ${product.amount} ${product.asset} from Aave`}
+                label={`Borrow ${priceLabel} from Aave`}
               />
               <StepLine
                 k="withdraw"
@@ -192,7 +206,7 @@ export function CreditCheckoutCard() {
                 activeStep={activeStep}
                 phase={phase}
                 receipt={response?.receipts?.[2]}
-                label={`Pay ${product.merchant} ${product.amount} ${product.asset}`}
+                label={`Pay ${product.merchant} ${priceLabel}`}
               />
             </ol>
           )}
@@ -281,8 +295,10 @@ export function CreditCheckoutCard() {
 
 function ProductPill({
   product,
+  priceLabel,
 }: {
   product: { label: string; merchant: string; amount: string; asset: string };
+  priceLabel: string;
 }) {
   return (
     <div className="mt-3 flex items-center gap-2.5 rounded-xl bg-canvas/40 px-3 py-2 ring-1 ring-white/[0.04]">
@@ -292,7 +308,7 @@ function ProductPill({
       <div className="min-w-0 flex-1">
         <p className="truncate text-[12.5px] font-semibold text-cloud">{product.label}</p>
         <p className="text-[10.5px] text-mute">
-          {product.merchant} · {product.amount} {product.asset} / week
+          {product.merchant} · {priceLabel}
         </p>
       </div>
     </div>

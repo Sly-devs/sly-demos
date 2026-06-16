@@ -440,11 +440,17 @@ export function borrowUnsignedTx(env: MayaEnv): CompassTx {
  * tenant doesn't drain anything. Single weekly subscription so the
  * narrative stays simple ("recurring debit from your Aave credit line").
  */
+/** Demo product: a Nike Pegasus 41 at $145, framed as the answer to
+ * "find me shoes under $150". The real on-chain pay is still `amount`
+ * (a sub-dollar USDC transfer), but every user-facing surface speaks
+ * in `displayAmount` so the narrative reads like a real purchase. */
 export const CHECKOUT_PRODUCT = {
-  sku: 'trail-runner-weekly',
-  label: 'Trail Runner Subscription',
-  merchant: 'TrailCo',
-  amount: '0.10', // USDC
+  sku: 'nike-pegasus-41',
+  label: 'Nike Pegasus 41',
+  merchant: 'Nike',
+  amount: '0.10', // real USDC moved on-chain (sandbox)
+  displayAmount: '145', // displayed price — see DEMO_SCALE
+  displayBudget: '150', // "shoes under $150" budget framing
   asset: 'USDC',
   chain: 'base',
 } as const;

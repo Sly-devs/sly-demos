@@ -58,7 +58,10 @@ export async function POST() {
       phase: 'awaiting_approval',
       requestId: scope.data.request_id,
       scope: 'treasury',
-      amount: CHECKOUT_PRODUCT.amount,
+      // Displayed amount drives the approval-sheet hero number. The
+      // real on-chain transfer is still CHECKOUT_PRODUCT.amount — only
+      // the consumer-facing surface is scaled (see DEMO_SCALE).
+      amount: CHECKOUT_PRODUCT.displayAmount,
       asset: CHECKOUT_PRODUCT.asset,
       merchant: CHECKOUT_PRODUCT.merchant,
       merchantAddress: merchant.eoa,
