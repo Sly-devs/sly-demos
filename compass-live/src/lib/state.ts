@@ -114,12 +114,17 @@ interface ScopeGrant {
   expires_at?: string | null;
 }
 
+/** Extract `grants[]` from either flat or `{data:{grants}}` envelopes. */
+function unwrapGrants(list: { grants?: ScopeGrant[]; data?: { grants?: ScopeGrant[] } }): ScopeGrant[] {
+  return list?.grants ?? list?.data?.grants ?? [];
+}
+
 /** Revoke every active grant of (agent, scope). Returns the count revoked. */
 async function revokeScope(agentId: string, scope: CompassScope): Promise<number> {
-  const list = await slyFetch<{ grants: ScopeGrant[] }>(
+  const list = await slyFetch<{ grants?: ScopeGrant[]; data?: { grants?: ScopeGrant[] } }>(
     `/v1/organization/scopes?agent_id=${encodeURIComponent(agentId)}`,
   );
-  const matching = (list.grants ?? []).filter(
+  const matching = unwrapGrants(list).filter(
     (g) => g.scope === scope && g.status === 'active',
   );
   for (const g of matching) {
@@ -134,11 +139,11 @@ async function revokeScope(agentId: string, scope: CompassScope): Promise<number
  * issuing a new one.
  */
 async function ensureActiveScope(agentId: string, scope: CompassScope): Promise<string> {
-  const list = await slyFetch<{ grants: ScopeGrant[] }>(
+  const list = await slyFetch<{ grants?: ScopeGrant[]; data?: { grants?: ScopeGrant[] } }>(
     `/v1/organization/scopes?agent_id=${encodeURIComponent(agentId)}`,
   );
   const now = new Date().toISOString();
-  const existing = (list.grants ?? []).find(
+  const existing = unwrapGrants(list).find(
     (g) =>
       g.scope === scope &&
       g.status === 'active' &&
