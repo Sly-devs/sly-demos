@@ -114,13 +114,36 @@ async function pickMayaAgent(baseUrl: string, tenantKey: string): Promise<{ id: 
 }
 
 async function fetchAgentDetails(baseUrl: string, tenantKey: string, agentId: string): Promise<{ parentAccountId: string; walletAddress: string } | { error: string }> {
-  const r = await fetch(`${baseUrl}/v1/agents/${encodeURIComponent(agentId)}`, { headers: { authorization: `Bearer ${tenantKey}` } });
-  if (!r.ok) return { error: `Failed to fetch agent ${agentId.slice(0, 8)}… (${r.status})` };
-  const body = (await r.json()) as { data?: { parentAccountId?: string; parent_account_id?: string; walletAddress?: string; eoa?: string } };
-  const a = body?.data ?? (body as Record<string, unknown>);
+  // Parent account comes from /v1/agents/:id; the EOA we explicitly pick
+  // from /v1/agents/:id/wallet because the agent record's `walletAddress`
+  // can resolve to a smart_wallet Safe (the Compass-managed proxy) once
+  // the agent has been onboarded — we want the signing EOA, not the
+  // Safe that holds funds. Two round-trips, but both are tiny and the
+  // result is cached for the lifetime of the request handler anyway.
+  const [agentRes, walletRes] = await Promise.all([
+    fetch(`${baseUrl}/v1/agents/${encodeURIComponent(agentId)}`, { headers: { authorization: `Bearer ${tenantKey}` } }),
+    fetch(`${baseUrl}/v1/agents/${encodeURIComponent(agentId)}/wallet`, { headers: { authorization: `Bearer ${tenantKey}` } }),
+  ]);
+  if (!agentRes.ok) return { error: `Failed to fetch agent ${agentId.slice(0, 8)}… (${agentRes.status})` };
+  const agentBody = (await agentRes.json()) as { data?: { parentAccountId?: string; parent_account_id?: string } };
+  const a = agentBody?.data ?? (agentBody as Record<string, unknown>);
   const parentAccountId = (a as { parentAccountId?: string; parent_account_id?: string }).parentAccountId ?? (a as { parent_account_id?: string }).parent_account_id;
-  const walletAddress = (a as { walletAddress?: string; eoa?: string }).walletAddress ?? (a as { eoa?: string }).eoa;
-  if (!parentAccountId || !walletAddress) return { error: `Agent ${agentId.slice(0, 8)}… missing parent account or EOA in response` };
+  if (!parentAccountId) return { error: `Agent ${agentId.slice(0, 8)}… missing parent account` };
+
+  // EOA = the external/coinbase wallet. Fallback to the agent record's
+  // top-level walletAddress for tenants that haven't been onboarded
+  // through the wallets pipeline yet.
+  let walletAddress: string | undefined;
+  if (walletRes.ok) {
+    const walletBody = (await walletRes.json()) as { data?: { all_wallets?: Array<{ wallet_type?: string; provider?: string; wallet_address?: string; address?: string }> } };
+    const all = walletBody?.data?.all_wallets ?? [];
+    const eoa = all.find((w) => w.wallet_type === 'external' && w.provider === 'coinbase');
+    walletAddress = eoa?.wallet_address ?? eoa?.address;
+  }
+  if (!walletAddress) {
+    walletAddress = (a as { walletAddress?: string; eoa?: string }).walletAddress ?? (a as { eoa?: string }).eoa;
+  }
+  if (!walletAddress) return { error: `Agent ${agentId.slice(0, 8)}… has no external EOA wallet` };
   return { parentAccountId, walletAddress };
 }
 
@@ -408,4 +431,125 @@ export function borrowUnsignedTx(env: MayaEnv): CompassTx {
     throw new Error('Compass borrow returned no transaction payload');
   }
   return json.transaction;
+}
+
+/* ── credit-checkout (borrow → withdraw → pay merchant) ─────────────── */
+
+/**
+ * Concrete demo product. Sub-dollar so re-running against the smoke-test
+ * tenant doesn't drain anything. Single weekly subscription so the
+ * narrative stays simple ("recurring debit from your Aave credit line").
+ */
+export const CHECKOUT_PRODUCT = {
+  sku: 'trail-runner-weekly',
+  label: 'Trail Runner Subscription',
+  merchant: 'TrailCo',
+  amount: '0.10', // USDC
+  asset: 'USDC',
+  chain: 'base',
+} as const;
+
+export interface CheckoutStepReceipt {
+  label: string;
+  evaluationId?: string;
+  txHash?: string;
+  blockNumber?: string;
+  policyDecisionId?: string;
+}
+
+/** Build the credit:withdraw intent body for evaluate-intent. */
+export function withdrawIntent(env: MayaEnv, amount: string, asset: string = 'USDC') {
+  return {
+    version: '1',
+    subcommand: 'credit:withdraw',
+    agent_id: env.agentId,
+    requested_at: new Date().toISOString(),
+    params: {
+      chain: BORROW.chain,
+      amount,
+      currency: asset,
+      venue_type: 'compass:withdraw',
+    },
+  };
+}
+
+/** Run the Compass `credit transfer --action WITHDRAW` and return the unsigned tx. */
+export function withdrawUnsignedTx(env: MayaEnv, amount: string, asset: string = 'USDC'): CompassTx {
+  const json = compass<{ transaction?: CompassTx }>(env, [
+    'credit',
+    'transfer',
+    '--action',
+    'WITHDRAW',
+    '--token',
+    asset,
+    '--amount',
+    amount,
+    '--owner',
+    env.ownerEoa,
+    '--chain',
+    BORROW.chain,
+    '-o',
+    'json',
+    '--no-interactive',
+  ]);
+  if (!json.transaction?.to || !json.transaction?.data) {
+    throw new Error('Compass withdraw returned no transaction payload');
+  }
+  return json.transaction;
+}
+
+interface AgentSummary {
+  id: string;
+  name?: string;
+  walletAddress?: string;
+  kya_tier?: number;
+  kyaTier?: number;
+  status?: string;
+}
+
+/**
+ * Pick a "merchant" EOA on the same tenant. For the self-contained
+ * Option A demo this is the Operator agent (cleanest because USDC stays
+ * inside the tenant footprint — repeated demos don't drain external
+ * addresses). Returns null if no suitable agent exists.
+ *
+ * Falls back to any active agent that isn't Maya herself.
+ */
+export async function fetchMerchantEoa(env: MayaEnv): Promise<{ eoa: string; agentId: string; agentName: string } | null> {
+  const r = await fetch(`${env.baseUrl}/v1/agents?limit=100`, {
+    headers: { authorization: `Bearer ${env.tenantKey}` },
+  });
+  if (!r.ok) return null;
+  const body = (await r.json()) as { data?: AgentSummary[] };
+  const list = Array.isArray(body?.data) ? body.data : [];
+  // Prefer an agent whose name contains "Operator" — matches the Compass
+  // Demo Operator that pnpm onboard provisions.
+  const operator = list.find(
+    (a) =>
+      a.id !== env.agentId &&
+      a.status === 'active' &&
+      /operator/i.test(a.name ?? '') &&
+      a.walletAddress,
+  );
+  const fallback = list.find(
+    (a) => a.id !== env.agentId && a.status === 'active' && a.walletAddress,
+  );
+  const picked = operator ?? fallback;
+  if (!picked?.walletAddress) return null;
+  return { eoa: picked.walletAddress, agentId: picked.id, agentName: picked.name ?? 'merchant' };
+}
+
+/** Get the EXTERNAL (CDP) wallet id for Maya's agent — needed by /v1/wallets/:id/transfer. */
+export async function fetchAgentExternalWalletId(env: MayaEnv): Promise<string | null> {
+  const r = await fetch(
+    `${env.baseUrl}/v1/agents/${encodeURIComponent(env.agentId)}/wallet`,
+    { headers: { authorization: `Bearer ${env.tenantKey}` } },
+  );
+  if (!r.ok) return null;
+  const body = (await r.json()) as {
+    data?: { all_wallets?: Array<{ id?: string; wallet_type?: string; provider?: string }> };
+  };
+  const all = body?.data?.all_wallets ?? [];
+  const eoa = all.find((w) => w.wallet_type === 'external' && w.provider === 'coinbase');
+  return eoa?.id ?? null;
 }

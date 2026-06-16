@@ -1,5 +1,6 @@
 import { DeviceFrame } from '@/components/device-frame';
 import { MayaFlow, SavingsCard } from '@/components/maya-flow';
+import { CreditCheckoutCard } from '@/components/credit-checkout';
 import { MAYA } from '@/lib/demo';
 
 export default function Savings() {
@@ -61,6 +62,9 @@ export default function Savings() {
           </div>
         </div>
       </section>
+
+      {/* spend without breaking savings (borrow + withdraw + pay merchant) */}
+      <CreditCheckoutCard />
 
       {/* borrow against savings */}
       <section className="mt-6 px-5">
