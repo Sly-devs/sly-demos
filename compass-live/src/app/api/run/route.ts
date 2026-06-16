@@ -24,7 +24,7 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { createSession, pushEvent } from '@/lib/bus';
-import { setupScenario, restoreBaseline } from '@/lib/state';
+import { setupScenario, restoreBaseline, resolveAgent } from '@/lib/state';
 import { getScenario, scenarioSteps, type Scenario, type ScenarioStep } from '@/lib/scenarios';
 
 export const runtime = 'nodejs';
@@ -60,9 +60,9 @@ const SLY_TENANT_KEY = process.env.SLY_DEMO_TENANT_API_KEY || '';
 type Level = 'info' | 'good' | 'warn' | 'deny' | 'dim';
 
 export async function POST(req: NextRequest) {
-  let body: { scenario?: string };
+  let body: { scenario?: string; agent_id?: string };
   try {
-    body = (await req.json()) as { scenario?: string };
+    body = (await req.json()) as { scenario?: string; agent_id?: string };
   } catch {
     return NextResponse.json({ error: 'invalid json body' }, { status: 400 });
   }
@@ -70,13 +70,19 @@ export async function POST(req: NextRequest) {
   if (!scenario) {
     return NextResponse.json({ error: `unknown scenario: ${String(body?.scenario)}` }, { status: 400 });
   }
+  if (!body.agent_id) {
+    return NextResponse.json(
+      { error: 'agent_id is required — pick an agent from the picker first.' },
+      { status: 400 },
+    );
+  }
   const sessionId = createSession();
   // Fire-and-forget; the browser subscribes via /stream/:id.
-  void runScenario(sessionId, scenario);
+  void runScenario(sessionId, scenario, body.agent_id);
   return NextResponse.json({ session_id: sessionId });
 }
 
-async function runScenario(sessionId: string, scenario: Scenario): Promise<void> {
+async function runScenario(sessionId: string, scenario: Scenario, agentId: string): Promise<void> {
   const startedAt = Date.now();
   const banner = (text: string, level: Level = 'info') =>
     pushEvent(sessionId, { kind: 'meta', pane: 'either', text, level });
@@ -88,7 +94,12 @@ async function runScenario(sessionId: string, scenario: Scenario): Promise<void>
   try {
     banner(`▶ ${scenario.label} — ${scenario.sub}`, 'info');
     left('# preparing scenario state…', 'dim');
-    await setupScenario(scenario);
+    // The partner picked which of THEIR agents runs this scenario; the
+    // runner uses it for every role inside the scenario (no earn vs
+    // credit split). setupScenario flips status / allowlist / scope on
+    // that agent before the MCP wrapper is invoked.
+    await setupScenario(scenario, agentId);
+    const resolvedAgent = await resolveAgent(agentId);
 
     const steps = scenarioSteps(scenario);
     const isMulti = steps.length > 1;
@@ -99,6 +110,11 @@ async function runScenario(sessionId: string, scenario: Scenario): Promise<void>
 
     for (let i = 0; i < steps.length; i++) {
       const step = steps[i];
+      // Patch in the resolved agent_id + owner. scenarios.ts populates these
+      // from AGENTS which (in the public demos repo) reads from env vars; if
+      // those aren't set the values arrive empty. resolveAgents() above is
+      // the source of truth.
+      step.args = { ...step.args, agent_id: resolvedAgent.id, owner: resolvedAgent.eoa };
       const prefix = isMulti ? `[step ${i + 1}/${steps.length}] ` : '';
       if (isMulti) {
         banner(`▶ ${prefix}${step.label}`, 'info');
@@ -156,7 +172,7 @@ async function runScenario(sessionId: string, scenario: Scenario): Promise<void>
     banner(`runner error: ${(e as Error).message}`, 'deny');
   } finally {
     try {
-      await restoreBaseline();
+      await restoreBaseline(agentId);
     } catch (e) {
       banner(`restore baseline failed: ${(e as Error).message}`, 'warn');
     }
@@ -363,7 +379,15 @@ async function emitCuratedEvents(
   await wait(160);
 
   // 5. The COMPASS CLI invocation — what their team needs to review.
-  const cliText = step.buildCli();
+  // buildCli() interpolates AGENTS.x.eoa at module load; if the env
+  // wasn't set the address came out empty. Substitute step.args.owner
+  // (which the runner patched with the resolved EOA before this call)
+  // so the displayed command always has a real address.
+  const ownerEoa = String((step.args as Record<string, unknown>).owner ?? '');
+  const cliText = step.buildCli().replace(
+    /--owner\s+(0x[0-9a-fA-F]{40})?/,
+    `--owner ${ownerEoa}`,
+  );
   if (decision === 'approve') {
     right(`${prefix}[exec] $ ${cliText}`, 'good', { surface: 'compass-cli' });
     await wait(140);
@@ -444,6 +468,9 @@ async function fetchAuditRow(
     }> };
     const row = body?.rows?.[0];
     if (!row) return null;
+    // Repackage to the existing call-site contract — signature is
+    // base64 from the API instead of hex from the DB; the right pane
+    // truncates it for display either way.
     return {
       action: row.action,
       actor_type: row.actor_type,

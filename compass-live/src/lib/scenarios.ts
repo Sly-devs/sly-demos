@@ -25,6 +25,7 @@ export type ScenarioId =
   | 'multi_autonomous_yield'
   | 'multi_borrow_and_pay'
   | 'multi_stage_and_deposit'
+  | 'onboard_compass'
   // Faked previews — the underlying primitive (hierarchical agent
   // delegation, perps execute, etc.) isn't built in v1, but we want
   // the demo to show the operator what the flow will look like. Each
@@ -51,23 +52,13 @@ export interface SetupSpec {
   tslaInAllowlist: boolean;
 }
 
-// Agent IDs + provisioned CDP wallet addresses on the sandbox tenant
-// this demo runs against. Read from env so partners can point this at
-// agents they've provisioned themselves (see ../README.md for setup).
-// Defaults shown below are the public Sly × Compass partnership demo
-// tenant — request credentials from partnerships@getsly.ai if you want
-// to run against it without provisioning your own.
+// Placeholder shape — the picker (top-right of the demo page) supplies
+// the actual agent_id at request time, and the runner patches step.args
+// with the resolved EOA before invoking the MCP wrapper. These empty
+// strings are the args-template values that get overridden per request.
 export const AGENTS: Record<AgentKey, { id: string; eoa: string; tier: number }> = {
-  earn: {
-    id: process.env.COMPASS_DEMO_EARN_AGENT_ID || '',
-    eoa: process.env.COMPASS_DEMO_EARN_AGENT_EOA || '',
-    tier: 1,
-  },
-  credit: {
-    id: process.env.COMPASS_DEMO_CREDIT_AGENT_ID || '',
-    eoa: process.env.COMPASS_DEMO_CREDIT_AGENT_EOA || '',
-    tier: 2,
-  },
+  earn:   { id: '', eoa: '', tier: 1 },
+  credit: { id: '', eoa: '', tier: 2 },
 };
 
 // Morpho USDC vault on Base (Steakhouse Prime) — same one used in the
@@ -81,7 +72,7 @@ const COMPASS_FLAGS = '-o json --no-interactive';
 export interface ScenarioStep {
   label: string;       // shown as "[step k/N] <label>" on both panes
   description?: string; // longer subtitle for the right pane banner
-  tool: 'governed_earn_deposit' | 'governed_earn_withdraw' | 'governed_earn_swap' | 'governed_earn_transfer' | 'governed_credit_borrow' | 'governed_tokenized_buy' | 'governed_compass_withdraw' | 'governed_perps_order';
+  tool: 'governed_earn_deposit' | 'governed_earn_withdraw' | 'governed_earn_swap' | 'governed_earn_transfer' | 'governed_credit_borrow' | 'governed_tokenized_buy' | 'governed_compass_withdraw' | 'governed_perps_order' | 'governed_earn_create_account' | 'governed_credit_create_account' | 'governed_tokenized_create_account';
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   args: Record<string, any>;
   // Render the exact compass invocation that the wrapper would (and
@@ -376,6 +367,62 @@ export const SCENARIOS: Scenario[] = [
   },
 
   {
+    id: 'onboard_compass',
+    label: 'Onboard agent · 3-surface Compass setup',
+    sub: '3 steps: create earn + credit + tokenized accounts · each Sly-gated',
+    tone: 'good',
+    expected: 'approve',
+    // Onboarding uses the earn role purely for routing through setupScenario;
+    // the runner patches agent_id + owner from the picker at request time.
+    // No scope step-up needed — create-account is allowed by default.
+    setup: { agent: 'earn', agentStatus: 'active', scopes: {}, usdcInAllowlist: true, tslaInAllowlist: true },
+    steps: [
+      {
+        label: 'Deploy Earn Account',
+        description:
+          "Compass's per-owner smart-account for the yield surface. One contract deploy per owner per chain; required before any earn:* action.",
+        tool: 'governed_earn_create_account',
+        args: {
+          agent_id: AGENTS.earn.id,
+          owner: AGENTS.earn.eoa,
+          chain: 'base',
+        },
+        buildCli() {
+          return `compass earn create-account --owner ${AGENTS.earn.eoa} --sender ${AGENTS.earn.eoa} --chain base ${COMPASS_FLAGS}`;
+        },
+      },
+      {
+        label: 'Deploy Credit Account',
+        description:
+          'Same idea for the credit surface — a Safe-style smart account per owner. Independent policy decision + signed audit row.',
+        tool: 'governed_credit_create_account',
+        args: {
+          agent_id: AGENTS.earn.id,
+          owner: AGENTS.earn.eoa,
+          chain: 'base',
+        },
+        buildCli() {
+          return `compass credit create-account --owner ${AGENTS.earn.eoa} --sender ${AGENTS.earn.eoa} --chain base ${COMPASS_FLAGS}`;
+        },
+      },
+      {
+        label: 'Deploy Tokenized Equities Account',
+        description:
+          "Final surface — Ondo-style tokenized equities. With these three deploys, the agent is Compass-ready for all governed_* usage tools.",
+        tool: 'governed_tokenized_create_account',
+        args: {
+          agent_id: AGENTS.earn.id,
+          owner: AGENTS.earn.eoa,
+          chain: 'base',
+        },
+        buildCli() {
+          return `compass tokenized-equities create-account --owner ${AGENTS.earn.eoa} --sender ${AGENTS.earn.eoa} ${COMPASS_FLAGS}`;
+        },
+      },
+    ],
+  },
+
+  {
     id: 'multi_borrow_and_pay',
     label: 'Borrow-and-pay loop',
     sub: '2 steps: credit borrow → withdraw to EOA · agent now holds spendable funds',
@@ -462,7 +509,7 @@ export const SCENARIOS: Scenario[] = [
         fake: {
           leftLines: [
             'Sly × Compass MCP server running on stdio',
-            'Sly API: https://sandbox.getsly.ai | default chain: base',
+            'Sly API: http://localhost:4000 | default chain: base',
             '[agent→MCP] connected — 16 tools available',
             '[agent→MCP] (acting as TREASURY agent) calling governed_credit_borrow (owner 0x897Fb7…, amount 1.0 USDC)',
             '',
@@ -628,7 +675,7 @@ export const SCENARIOS: Scenario[] = [
         fake: {
           leftLines: [
             'Sly × Compass MCP server running on stdio',
-            'Sly API: https://sandbox.getsly.ai | default chain: hyperevm',
+            'Sly API: http://localhost:4000 | default chain: hyperevm',
             '[agent→MCP] connected — 16 tools available',
             '[agent→MCP] calling governed_perps_order (owner 0x897Fb7…, BTC buy 0.001)',
             '',

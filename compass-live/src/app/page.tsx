@@ -18,6 +18,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SCENARIOS, type ScenarioId } from '@/lib/scenarios';
 
+interface PickableAgent {
+  id: string;
+  name: string;
+  status: string;
+  kyaTier: number;
+  hasWallet: boolean;
+  walletProvider: string | null;
+  walletAddress: string | null;
+  hasCompassAllowlist: boolean;
+}
+
+const PICKER_STORAGE_KEY = 'compass-live:selectedAgentId';
+
 type Level = 'info' | 'good' | 'warn' | 'deny' | 'dim';
 type Pane = 'left' | 'right' | 'either';
 interface DemoEvent {
@@ -51,7 +64,67 @@ export default function CompassDemoPage() {
   const [leftLines, setLeftLines] = useState<DemoEvent[]>([]);
   const [rightLines, setRightLines] = useState<DemoEvent[]>([]);
   const [banner, setBanner] = useState<DemoEvent | null>(null);
+  const [agents, setAgents] = useState<PickableAgent[]>([]);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [agentsLoading, setAgentsLoading] = useState(true);
   const esRef = useRef<EventSource | null>(null);
+
+  // Fetch the tenant's agents once. The /api/agents proxy holds the
+  // tenant key server-side and annotates each row with hasWallet +
+  // hasCompassAllowlist for capability gating.
+  useEffect(() => {
+    let alive = true;
+    void fetch('/api/agents')
+      .then((r) => r.json())
+      .then((d: { agents: PickableAgent[] }) => {
+        if (!alive) return;
+        setAgents(d.agents ?? []);
+        // Restore previous selection or pick the first compatible agent.
+        const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(PICKER_STORAGE_KEY) : null;
+        const valid = (d.agents ?? []).find((a) => a.id === stored && a.hasWallet);
+        const fallback = (d.agents ?? []).find((a) => a.hasWallet && a.status === 'active');
+        setSelectedAgentId(valid?.id ?? fallback?.id ?? null);
+      })
+      .catch(() => { /* picker will show a "couldn't load agents" state */ })
+      .finally(() => { if (alive) setAgentsLoading(false); });
+    return () => { alive = false; };
+  }, []);
+
+  const selectedAgent = useMemo(
+    () => agents.find((a) => a.id === selectedAgentId) ?? null,
+    [agents, selectedAgentId],
+  );
+
+  const selectAgent = useCallback((id: string) => {
+    setSelectedAgentId(id);
+    try { localStorage.setItem(PICKER_STORAGE_KEY, id); } catch { /* noop */ }
+    setPickerOpen(false);
+  }, []);
+
+  // Per-scenario compatibility. For now: every scenario needs the picked
+  // agent to have a wallet. (The runner re-stamps the allowlist, so the
+  // partner doesn't need pre-configured venues — but no wallet = nothing
+  // to gate.) Per-scenario refinements can layer on top of this later.
+  const scenarioEnabled = useMemo(() => {
+    const map: Record<string, { enabled: boolean; reason?: string }> = {};
+    for (const s of SCENARIOS) {
+      if (!selectedAgent) { map[s.id] = { enabled: false, reason: 'Pick an agent first' }; continue; }
+      if (!selectedAgent.hasWallet) {
+        map[s.id] = { enabled: false, reason: 'Selected agent has no wallet — provision one first.' };
+        continue;
+      }
+      if (selectedAgent.status !== 'active') {
+        // deny_kill_switch is the one scenario that intentionally suspends
+        // the agent. If they're already suspended, run it anyway.
+        if (s.id === 'deny_kill_switch') { map[s.id] = { enabled: true }; continue; }
+        map[s.id] = { enabled: false, reason: `Agent is ${selectedAgent.status}. Reactivate it first.` };
+        continue;
+      }
+      map[s.id] = { enabled: true };
+    }
+    return map;
+  }, [selectedAgent]);
 
   const reset = useCallback(() => {
     setLeftLines([]);
@@ -69,13 +142,17 @@ export default function CompassDemoPage() {
   const runScenario = useCallback(
     async (scenario: Scenario) => {
       if (running) return;
+      if (!selectedAgentId) {
+        setBanner({ kind: 'meta', pane: 'either', text: 'Pick an agent first.', ts: Date.now(), level: 'deny' });
+        return;
+      }
       reset();
       setRunning(scenario);
       try {
         const res = await fetch('/api/run', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scenario }),
+          body: JSON.stringify({ scenario, agent_id: selectedAgentId }),
         });
         if (!res.ok) {
           const t = await res.text().catch(() => '');
@@ -118,14 +195,21 @@ export default function CompassDemoPage() {
         setRunning(null);
       }
     },
-    [running, reset, closeStream],
+    [running, reset, closeStream, selectedAgentId],
   );
 
   useEffect(() => () => closeStream(), [closeStream]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 px-6 py-10">
-      <Header />
+      <Header
+        agents={agents}
+        selectedAgent={selectedAgent}
+        selectAgent={selectAgent}
+        pickerOpen={pickerOpen}
+        setPickerOpen={setPickerOpen}
+        loading={agentsLoading}
+      />
 
       <div className="mx-auto max-w-6xl mt-8">
         <SectionLabel tone="good">Compass surfaces — approved & dispatched</SectionLabel>
@@ -137,7 +221,7 @@ export default function CompassDemoPage() {
               sub={s.sub}
               tone={s.tone}
               isRunning={running === s.id}
-              disabled={running !== null && running !== s.id}
+              disabled={(running !== null && running !== s.id) || !scenarioEnabled[s.id]?.enabled}
               onClick={() => runScenario(s.id)}
             />
           ))}
@@ -153,7 +237,7 @@ export default function CompassDemoPage() {
               sub={s.sub}
               tone={s.tone}
               isRunning={running === s.id}
-              disabled={running !== null && running !== s.id}
+              disabled={(running !== null && running !== s.id) || !scenarioEnabled[s.id]?.enabled}
               onClick={() => runScenario(s.id)}
             />
           ))}
@@ -169,7 +253,7 @@ export default function CompassDemoPage() {
               sub={s.sub}
               tone={s.tone}
               isRunning={running === s.id}
-              disabled={running !== null && running !== s.id}
+              disabled={(running !== null && running !== s.id) || !scenarioEnabled[s.id]?.enabled}
               onClick={() => runScenario(s.id)}
             />
           ))}
@@ -198,18 +282,150 @@ export default function CompassDemoPage() {
   );
 }
 
-function Header() {
+function Header({
+  agents,
+  selectedAgent,
+  selectAgent,
+  pickerOpen,
+  setPickerOpen,
+  loading,
+}: {
+  agents: PickableAgent[];
+  selectedAgent: PickableAgent | null;
+  selectAgent: (id: string) => void;
+  pickerOpen: boolean;
+  setPickerOpen: (b: boolean) => void;
+  loading: boolean;
+}) {
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="text-xs uppercase tracking-widest text-slate-500">Sly × Compass</div>
-      <h1 className="mt-1 text-3xl font-semibold text-slate-100">Live governance demo</h1>
-      <p className="mt-3 max-w-3xl text-slate-400 leading-relaxed">
-        An AI agent calls a Compass DeFi action through an MCP wrapper. <span className="text-slate-200">Every state-changing call</span> is
-        evaluated by Sly first — KYA tier, scope step-up, venue allowlist, spending caps, operator kill-switch.
-        Compass only sees the action if Sly approves. Each scenario below runs the agent end-to-end against the
-        local Sly API and the real Compass CLI.
-      </p>
+      <div className="flex items-start justify-between gap-6">
+        <div>
+          <div className="text-xs uppercase tracking-widest text-slate-500">Sly × Compass</div>
+          <h1 className="mt-1 text-3xl font-semibold text-slate-100">Live governance demo</h1>
+          <p className="mt-3 max-w-3xl text-slate-400 leading-relaxed">
+            An AI agent calls a Compass DeFi action through an MCP wrapper. <span className="text-slate-200">Every state-changing call</span> is
+            evaluated by Sly first — KYA tier, scope step-up, venue allowlist, spending caps, operator kill-switch.
+            Compass only sees the action if Sly approves. Each scenario below runs the agent end-to-end against the
+            local Sly API and the real Compass CLI.
+          </p>
+        </div>
+        <AgentPicker
+          agents={agents}
+          selectedAgent={selectedAgent}
+          selectAgent={selectAgent}
+          open={pickerOpen}
+          setOpen={setPickerOpen}
+          loading={loading}
+        />
+      </div>
     </div>
+  );
+}
+
+function AgentPicker({
+  agents,
+  selectedAgent,
+  selectAgent,
+  open,
+  setOpen,
+  loading,
+}: {
+  agents: PickableAgent[];
+  selectedAgent: PickableAgent | null;
+  selectAgent: (id: string) => void;
+  open: boolean;
+  setOpen: (b: boolean) => void;
+  loading: boolean;
+}) {
+  const pickable = agents.filter((a) => a.hasWallet);
+  const compassReady = pickable.filter((a) => a.hasCompassAllowlist);
+  const other = pickable.filter((a) => !a.hasCompassAllowlist);
+
+  return (
+    <div className="relative shrink-0 mt-1">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="group flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/80 px-3 py-2 text-left hover:border-slate-700 transition"
+      >
+        <div className="flex-1 min-w-[14rem]">
+          <div className="text-[10px] uppercase tracking-widest text-slate-500">Demo agent</div>
+          {loading ? (
+            <div className="mt-0.5 text-sm text-slate-400">loading…</div>
+          ) : selectedAgent ? (
+            <>
+              <div className="mt-0.5 text-sm text-slate-100 truncate">{selectedAgent.name}</div>
+              <div className="mt-0.5 text-[11px] text-slate-500 flex items-center gap-2">
+                <span>T{selectedAgent.kyaTier}</span>
+                <span>·</span>
+                <span>{selectedAgent.status}</span>
+                {selectedAgent.hasCompassAllowlist && (
+                  <>
+                    <span>·</span>
+                    <span className="text-emerald-400">Compass-ready</span>
+                  </>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="mt-0.5 text-sm text-rose-400">no compatible agent</div>
+          )}
+        </div>
+        <span className="text-slate-500 text-xs">▾</span>
+      </button>
+
+      {open && (
+        <div className="absolute right-0 z-30 mt-1 w-[22rem] max-h-[26rem] overflow-y-auto rounded-lg border border-slate-700 bg-slate-900 shadow-xl">
+          {compassReady.length > 0 && (
+            <Section label="Compass-ready agents">
+              {compassReady.map((a) => (
+                <AgentRow key={a.id} agent={a} selected={a.id === selectedAgent?.id} onClick={() => selectAgent(a.id)} />
+              ))}
+            </Section>
+          )}
+          {other.length > 0 && (
+            <Section label="Other agents with a wallet">
+              {other.map((a) => (
+                <AgentRow key={a.id} agent={a} selected={a.id === selectedAgent?.id} onClick={() => selectAgent(a.id)} />
+              ))}
+            </Section>
+          )}
+          {pickable.length === 0 && (
+            <div className="px-3 py-4 text-sm text-slate-400">
+              No agents with wallets on this tenant. Run <code className="text-slate-300">seed-compass-demo.ts</code> first.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-widest text-slate-500">{label}</div>
+      <div className="pb-1">{children}</div>
+    </div>
+  );
+}
+
+function AgentRow({ agent, selected, onClick }: { agent: PickableAgent; selected: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full text-left px-3 py-2 hover:bg-slate-800/60 transition ${selected ? 'bg-slate-800/40' : ''}`}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-sm text-slate-100 truncate">{agent.name}</div>
+        <div className="text-[10px] uppercase tracking-widest text-slate-500 shrink-0">T{agent.kyaTier} · {agent.status}</div>
+      </div>
+      {agent.walletAddress && (
+        <div className="mt-0.5 text-[11px] font-mono text-slate-500 truncate">{agent.walletAddress}</div>
+      )}
+    </button>
   );
 }
 
