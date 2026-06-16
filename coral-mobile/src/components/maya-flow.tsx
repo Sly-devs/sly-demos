@@ -227,12 +227,18 @@ function SettledCard({ result }: { result: MayaBorrowResponse }) {
   );
 }
 
-function ApprovalSheet({
+export function ApprovalSheet({
   pending,
   onApprove,
+  blurb,
+  ctaLabel,
 }: {
   pending: MayaBorrowResponse;
   onApprove: () => void;
+  /** Optional override for the sub-headline. Default: "borrow against your Aave savings". */
+  blurb?: React.ReactNode;
+  /** Optional override for the button text. Default: "Approve & borrow". */
+  ctaLabel?: string;
 }) {
   const [scanning, setScanning] = useState(false);
 
@@ -264,8 +270,12 @@ function ApprovalSheet({
             </span>
           </p>
           <p className="mt-1 text-[14px] text-mute">
-            borrow against your{' '}
-            <span className="font-medium text-cloud/80">Aave savings</span>
+            {blurb ?? (
+              <>
+                borrow against your{' '}
+                <span className="font-medium text-cloud/80">Aave savings</span>
+              </>
+            )}
           </p>
         </div>
 
@@ -289,7 +299,7 @@ function ApprovalSheet({
               <Spinner /> Approving with Coral ID…
             </span>
           ) : (
-            'Approve & borrow'
+            ctaLabel ?? 'Approve & borrow'
           )}
         </button>
         <p className="mt-3 text-center text-[11px] text-mute">

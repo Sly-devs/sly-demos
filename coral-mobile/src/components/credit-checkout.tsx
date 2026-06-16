@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { ApprovalSheet } from './maya-flow';
 
-type Phase = 'idle' | 'running' | 'settled' | 'error';
+type Phase = 'idle' | 'awaiting_approval' | 'running' | 'settled' | 'error';
 type StepKey = 'borrow' | 'withdraw' | 'pay';
 
 interface CheckoutReceipt {
@@ -13,7 +14,19 @@ interface CheckoutReceipt {
   policyDecisionId?: string;
 }
 
-interface CheckoutResponse {
+interface PreflightResponse {
+  phase: 'awaiting_approval' | 'error';
+  requestId?: string;
+  scope?: string;
+  amount?: string;
+  asset?: string;
+  merchant?: string;
+  merchantAddress?: string;
+  purpose?: string;
+  error?: string;
+}
+
+interface ConfirmResponse {
   phase: 'settled' | 'error';
   receipts?: CheckoutReceipt[];
   events?: { kind: string; label: string }[];
@@ -21,25 +34,24 @@ interface CheckoutResponse {
   merchant?: { name: string; address: string; agentName: string };
   error?: string;
   step?: string;
-  details?: unknown;
 }
 
 /**
- * "Pay with Aave credit" — the Coral × Compass spending narrative.
+ * Pay-with-Aave-credit card.
  *
- * One click → borrow against Maya's Aave collateral → withdraw to her
- * EOA → pay the merchant. Three real on-chain txes on Base mainnet,
- * each Sly-gated. Refreshes the savings card via a window-level event
- * once settled so debt + available credit tick up immediately.
+ * Two-stage UX matches the existing borrow flow:
+ *   1. Click "Pay with my Aave credit" → server requests a one_shot
+ *      treasury grant → Face-ID approval sheet rises from the bottom.
+ *   2. Approve → server runs borrow + withdraw + merchant payment.
+ *      Three real on-chain txes on Base mainnet. Refreshes the savings
+ *      card via a window event when settled.
  */
 export function CreditCheckoutCard() {
   const [phase, setPhase] = useState<Phase>('idle');
+  const [pending, setPending] = useState<PreflightResponse | null>(null);
   const [activeStep, setActiveStep] = useState<StepKey | null>(null);
-  const [response, setResponse] = useState<CheckoutResponse | null>(null);
+  const [response, setResponse] = useState<ConfirmResponse | null>(null);
 
-  // Walk through the steps optimistically while the server orchestrates —
-  // the server response is the source of truth, but the eye-candy is real
-  // (each step is sequential, each takes ~5-15s on Base mainnet).
   useEffect(() => {
     if (phase !== 'running') return;
     setActiveStep('borrow');
@@ -52,23 +64,45 @@ export function CreditCheckoutCard() {
   }, [phase]);
 
   async function start() {
-    setPhase('running');
     setResponse(null);
+    setPending(null);
     try {
       const res = await fetch('/api/maya/credit-checkout', { method: 'POST' });
-      const body = (await res.json()) as CheckoutResponse;
+      const body = (await res.json()) as PreflightResponse;
+      if (body.phase === 'awaiting_approval' && body.requestId) {
+        setPending(body);
+        setPhase('awaiting_approval');
+      } else {
+        setResponse({ phase: 'error', error: body.error ?? 'preflight failed' });
+        setPhase('error');
+      }
+    } catch (e) {
+      setResponse({ phase: 'error', error: e instanceof Error ? e.message : String(e) });
+      setPhase('error');
+    }
+  }
+
+  async function confirm() {
+    if (!pending?.requestId) return;
+    setPhase('running');
+    try {
+      const res = await fetch('/api/maya/credit-checkout/confirm', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ requestId: pending.requestId }),
+      });
+      const body = (await res.json()) as ConfirmResponse;
       if (body.phase === 'settled') {
         setPhase('settled');
         setResponse(body);
-        // Tell the savings card to refetch.
         window.dispatchEvent(new CustomEvent('maya:position-refresh'));
       } else {
-        setPhase('error');
         setResponse(body);
+        setPhase('error');
       }
     } catch (e) {
-      setPhase('error');
       setResponse({ phase: 'error', error: e instanceof Error ? e.message : String(e) });
+      setPhase('error');
     }
   }
 
@@ -87,24 +121,27 @@ export function CreditCheckoutCard() {
       </h2>
       <p className="mt-1 text-[12px] leading-snug text-mute/90">
         Your agent borrows against your Aave collateral, routes it through your
-        Compass Safe, and pays the merchant — all in one click. Debt ticks up,
-        savings stay supplied.
+        Compass Safe, and pays the merchant — all gated by a one-shot{' '}
+        <span className="font-mono text-cloud/80">treasury</span> grant from you.
       </p>
 
       <div className="mt-3 rounded-[1.6rem] bg-gradient-to-b from-surface to-surface/60 p-4 ring-1 ring-hairline">
-        {/* product card */}
-        <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-coral/15 text-[18px] ring-1 ring-coral/30">
+        {/* product card — shoe is the focal visual now */}
+        <div className="flex items-start gap-4">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-coral/25 via-coral/15 to-coral/5 text-[44px] ring-1 ring-coral/30 shadow-[0_8px_28px_-12px_rgba(255,114,90,0.45)]">
             👟
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[15px] font-semibold text-cloud">{product.label}</p>
-            <p className="mt-0.5 text-[12px] text-mute">{product.merchant} · {product.amount} {product.asset} / week</p>
+          <div className="min-w-0 flex-1 self-center">
+            <p className="truncate text-[16px] font-semibold text-cloud">{product.label}</p>
+            <p className="mt-0.5 text-[12px] text-mute">{product.merchant}</p>
+            <p className="mt-1 text-[18px] font-semibold tracking-tight text-cloud tabnums">
+              {product.amount} <span className="text-[12px] font-medium text-mute">{product.asset} / week</span>
+            </p>
           </div>
         </div>
 
         {/* steps */}
-        {phase !== 'idle' && (
+        {(phase === 'running' || phase === 'settled') && (
           <ol className="mt-4 space-y-2 text-[12px]">
             <StepLine
               k="borrow"
@@ -127,8 +164,8 @@ export function CreditCheckoutCard() {
               activeStep={activeStep}
               phase={phase}
               receipt={response?.receipts?.[2]}
-              label={`${product.amount} ${product.asset} ready to spend at your EOA`}
-              hint="any USDC merchant · x402 · direct USDC.transfer"
+              label={`Pay ${product.merchant} ${product.amount} ${product.asset}`}
+              hint="wallet_transfer · treasury one-shot · CDP-signed USDC.transfer"
             />
           </ol>
         )}
@@ -147,10 +184,15 @@ export function CreditCheckoutCard() {
         {phase === 'settled' && response?.receipts && (
           <div className="mt-3 rounded-md bg-mint/8 px-3 py-2.5 text-[11px] leading-snug text-mint/95 ring-1 ring-mint/20">
             <p className="font-semibold tracking-tight">
-              Settled · 2 bilateral receipts · collateral untouched.
+              Settled · 3 bilateral receipts · collateral untouched.
             </p>
             <p className="mt-1 text-mute">
-              Aave debt up by {product.amount} {product.asset} · {product.amount} {product.asset} now sitting at your EOA, ready for any USDC-accepting merchant.
+              Aave debt up by {product.amount} {product.asset} · {product.merchant} paid{' '}
+              {response.merchant?.address ? (
+                <span className="font-mono text-cloud/80">
+                  {response.merchant.address.slice(0, 6)}…{response.merchant.address.slice(-4)}
+                </span>
+              ) : null}
             </p>
           </div>
         )}
@@ -158,9 +200,9 @@ export function CreditCheckoutCard() {
         {/* CTA */}
         <button
           onClick={start}
-          disabled={phase === 'running'}
+          disabled={phase === 'running' || phase === 'awaiting_approval'}
           className={`mt-4 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-[14px] font-semibold text-canvas transition-all ${
-            phase === 'running'
+            phase === 'running' || phase === 'awaiting_approval'
               ? 'bg-coral/60 cursor-wait'
               : phase === 'settled'
                 ? 'bg-mint hover:brightness-110'
@@ -168,11 +210,37 @@ export function CreditCheckoutCard() {
           }`}
         >
           {phase === 'idle' && <>Pay with my Aave credit <Arrow /></>}
+          {phase === 'awaiting_approval' && <>Awaiting your approval <Spinner /></>}
           {phase === 'running' && <>Settling on-chain <Spinner /></>}
           {phase === 'settled' && <>Run again <Replay /></>}
           {phase === 'error' && <>Retry</>}
         </button>
       </div>
+
+      {/* Face-ID-styled approval sheet (reuses the same component as the
+          borrow flow). Renders fixed-positioned so it overlays the whole
+          viewport; closes on approve. */}
+      {phase === 'awaiting_approval' && pending && pending.requestId && (
+        <ApprovalSheet
+          pending={{
+            phase: 'awaiting_approval',
+            requestId: pending.requestId,
+            scope: pending.scope ?? 'treasury',
+            amount: pending.amount,
+            asset: pending.asset,
+            purpose: pending.purpose,
+          }}
+          onApprove={confirm}
+          blurb={
+            <>
+              pay{' '}
+              <span className="font-medium text-cloud/80">{pending.merchant ?? 'merchant'}</span>{' '}
+              from your Aave credit line
+            </>
+          }
+          ctaLabel="Approve & pay"
+        />
+      )}
     </section>
   );
 }
