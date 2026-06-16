@@ -308,19 +308,29 @@ export function SavingsCard() {
 
   useEffect(() => {
     let alive = true;
-    fetch('/api/maya/position', { cache: 'no-store' })
-      .then((r) => r.json())
-      .then((d: MayaPositionResponse) => {
-        if (alive) setPos(d);
-      })
-      .catch(() => {
-        /* keep fallback */
-      })
-      .finally(() => {
-        if (alive) setLoaded(true);
-      });
+    const fetchPos = () => {
+      fetch('/api/maya/position', { cache: 'no-store' })
+        .then((r) => r.json())
+        .then((d: MayaPositionResponse) => {
+          if (alive) setPos(d);
+        })
+        .catch(() => {
+          /* keep fallback */
+        })
+        .finally(() => {
+          if (alive) setLoaded(true);
+        });
+    };
+    fetchPos();
+    // Other components (e.g. CreditCheckoutCard) emit this after a
+    // settled on-chain operation so the position re-fetches without a
+    // page reload — Aave subgraph indexers can lag the tx by ~5s, hence
+    // the small delay before refetch.
+    const onRefresh = () => setTimeout(fetchPos, 4_000);
+    window.addEventListener('maya:position-refresh', onRefresh);
     return () => {
       alive = false;
+      window.removeEventListener('maya:position-refresh', onRefresh);
     };
   }, []);
 
