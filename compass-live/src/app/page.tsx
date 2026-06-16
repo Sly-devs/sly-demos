@@ -27,9 +27,31 @@ interface PickableAgent {
   walletProvider: string | null;
   walletAddress: string | null;
   hasCompassAllowlist: boolean;
+  ethBalanceWei: string | null;
 }
 
 const PICKER_STORAGE_KEY = 'compass-live:selectedAgentId';
+
+// Picker treats an agent as "needs gas" when the EOA holds < this much
+// ETH. ~0.0003 ETH covers a Morpho deposit on Base. The "Fund agent"
+// button shows up only on agents under this threshold.
+const MIN_GAS_WEI = BigInt('300000000000000');
+const WEI_PER_ETH = BigInt('1000000000000000000');
+
+function isUnderGassed(a: PickableAgent | null): boolean {
+  if (!a || !a.ethBalanceWei) return false;
+  try { return BigInt(a.ethBalanceWei) < MIN_GAS_WEI; } catch { return false; }
+}
+
+function formatEth(wei: string | null): string {
+  if (!wei) return '?';
+  try {
+    const w = BigInt(wei);
+    const whole = w / WEI_PER_ETH;
+    const frac = w % WEI_PER_ETH;
+    return `${whole}.${frac.toString().padStart(18, '0').slice(0, 6)}`.replace(/0+$/, '').replace(/\.$/, '');
+  } catch { return '?'; }
+}
 
 type Level = 'info' | 'good' | 'warn' | 'deny' | 'dim';
 type Pane = 'left' | 'right' | 'either';
@@ -101,6 +123,46 @@ export default function CompassDemoPage() {
     try { localStorage.setItem(PICKER_STORAGE_KEY, id); } catch { /* noop */ }
     setPickerOpen(false);
   }, []);
+
+  // Funding state for the "Fund agent" CTA. `status` flips through
+  // 'idle' → 'funding' → 'ok' / 'error'; an error message lands in
+  // `message` for the inline toast. After a successful drip we re-fetch
+  // /api/agents to refresh balances.
+  const [fundingStatus, setFundingStatus] = useState<'idle' | 'funding' | 'ok' | 'error'>('idle');
+  const [fundingMessage, setFundingMessage] = useState<string | null>(null);
+
+  const fundAgent = useCallback(async () => {
+    if (!selectedAgentId) return;
+    setFundingStatus('funding');
+    setFundingMessage(null);
+    try {
+      const res = await fetch('/api/fund-agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agent_id: selectedAgentId }),
+      });
+      const body = (await res.json()) as { tx_hash?: string; error?: string; code?: string; hint?: string };
+      if (!res.ok) {
+        const detail = body.hint ?? body.error ?? 'Faucet failed.';
+        setFundingStatus('error');
+        setFundingMessage(`${body.code ?? 'ERROR'} · ${detail}`);
+        return;
+      }
+      setFundingStatus('ok');
+      setFundingMessage(`Drip broadcast — tx ${(body.tx_hash ?? '').slice(0, 10)}…`);
+      // Wait ~3s for Base finality, then re-poll /api/agents so the
+      // ethBalanceWei on the picker rows updates.
+      setTimeout(() => {
+        void fetch('/api/agents')
+          .then((r) => r.json())
+          .then((d: { agents: PickableAgent[] }) => setAgents(d.agents ?? []))
+          .catch(() => {});
+      }, 3500);
+    } catch (e) {
+      setFundingStatus('error');
+      setFundingMessage(`Network error: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }, [selectedAgentId]);
 
   // Per-scenario compatibility. For now: every scenario needs the picked
   // agent to have a wallet. (The runner re-stamps the allowlist, so the
@@ -209,6 +271,9 @@ export default function CompassDemoPage() {
         pickerOpen={pickerOpen}
         setPickerOpen={setPickerOpen}
         loading={agentsLoading}
+        fundAgent={fundAgent}
+        fundingStatus={fundingStatus}
+        fundingMessage={fundingMessage}
       />
 
       <div className="mx-auto max-w-6xl mt-8">
@@ -289,6 +354,9 @@ function Header({
   pickerOpen,
   setPickerOpen,
   loading,
+  fundAgent,
+  fundingStatus,
+  fundingMessage,
 }: {
   agents: PickableAgent[];
   selectedAgent: PickableAgent | null;
@@ -296,6 +364,9 @@ function Header({
   pickerOpen: boolean;
   setPickerOpen: (b: boolean) => void;
   loading: boolean;
+  fundAgent: () => void;
+  fundingStatus: 'idle' | 'funding' | 'ok' | 'error';
+  fundingMessage: string | null;
 }) {
   return (
     <div className="mx-auto max-w-6xl">
@@ -317,6 +388,9 @@ function Header({
           open={pickerOpen}
           setOpen={setPickerOpen}
           loading={loading}
+          fundAgent={fundAgent}
+          fundingStatus={fundingStatus}
+          fundingMessage={fundingMessage}
         />
       </div>
     </div>
@@ -330,6 +404,9 @@ function AgentPicker({
   open,
   setOpen,
   loading,
+  fundAgent,
+  fundingStatus,
+  fundingMessage,
 }: {
   agents: PickableAgent[];
   selectedAgent: PickableAgent | null;
@@ -337,10 +414,14 @@ function AgentPicker({
   open: boolean;
   setOpen: (b: boolean) => void;
   loading: boolean;
+  fundAgent: () => void;
+  fundingStatus: 'idle' | 'funding' | 'ok' | 'error';
+  fundingMessage: string | null;
 }) {
   const pickable = agents.filter((a) => a.hasWallet);
   const compassReady = pickable.filter((a) => a.hasCompassAllowlist);
   const other = pickable.filter((a) => !a.hasCompassAllowlist);
+  const needsFunding = isUnderGassed(selectedAgent);
 
   return (
     <div className="relative shrink-0 mt-1">
@@ -356,7 +437,7 @@ function AgentPicker({
           ) : selectedAgent ? (
             <>
               <div className="mt-0.5 text-sm text-slate-100 truncate">{selectedAgent.name}</div>
-              <div className="mt-0.5 text-[11px] text-slate-500 flex items-center gap-2">
+              <div className="mt-0.5 text-[11px] text-slate-500 flex items-center gap-2 flex-wrap">
                 <span>T{selectedAgent.kyaTier}</span>
                 <span>·</span>
                 <span>{selectedAgent.status}</span>
@@ -364,6 +445,14 @@ function AgentPicker({
                   <>
                     <span>·</span>
                     <span className="text-emerald-400">Compass-ready</span>
+                  </>
+                )}
+                {selectedAgent.ethBalanceWei !== null && (
+                  <>
+                    <span>·</span>
+                    <span className={needsFunding ? 'text-amber-400' : 'text-slate-400'}>
+                      {formatEth(selectedAgent.ethBalanceWei)} ETH
+                    </span>
                   </>
                 )}
               </div>
@@ -374,6 +463,32 @@ function AgentPicker({
         </div>
         <span className="text-slate-500 text-xs">▾</span>
       </button>
+
+      {/* Fund-agent CTA — shows below the picker pill when the selected
+          agent is under the gas threshold. Sly's cross-tenant faucet
+          drips 0.001 ETH on click. Tenant must have the gas_faucet
+          feature enabled (the endpoint surfaces a clean 403 → message
+          when not). */}
+      {selectedAgent && needsFunding && (
+        <div className="absolute right-0 mt-1 w-full">
+          <button
+            type="button"
+            onClick={fundAgent}
+            disabled={fundingStatus === 'funding'}
+            className="w-full rounded-lg border border-amber-700/50 bg-amber-900/20 px-3 py-2 text-left transition hover:border-amber-600/60 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <div className="text-[10px] uppercase tracking-widest text-amber-400">Needs gas</div>
+            <div className="mt-0.5 text-sm text-slate-100">
+              {fundingStatus === 'funding' ? 'Sending 0.001 ETH…' : 'Fund agent — Sly sponsors gas'}
+            </div>
+            {fundingMessage && (
+              <div className={`mt-0.5 text-[11px] ${fundingStatus === 'error' ? 'text-rose-300' : 'text-emerald-300'}`}>
+                {fundingMessage}
+              </div>
+            )}
+          </button>
+        </div>
+      )}
 
       {open && (
         <div className="absolute right-0 z-30 mt-1 w-[22rem] max-h-[26rem] overflow-y-auto rounded-lg border border-slate-700 bg-slate-900 shadow-xl">
