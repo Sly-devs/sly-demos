@@ -22,6 +22,8 @@ pnpm dev
 - A Sly sandbox tenant with the Quartz autopilot agent provisioned (email `partnerships@getsly.ai` for the pre-seeded partnership demo tenant — agent + portfolio-policy already configured)
 - The local `compass` CLI installed and authed (set `COMPASS_BIN` in `.env.local`) — Quartz uses `compass earn swap` for the actual rebalances
 
+> **Fresh-tenant gap (vs. coral-mobile / compass-live).** The sibling Compass demos share a `pnpm onboard` script that provisions everything via Sly's onboarding endpoint. Quartz currently does **not** — it expects a pre-seeded "Quartz Autopilot" agent with a custom portfolio-policy (60/30/10 bands + $250/tx cap + -10% drawdown trigger) that the generic onboarding endpoint doesn't yet provision. Until that lands, a fresh partner has to email `partnerships@getsly.ai` for the demo tenant credentials — there's no self-serve path. Tracked in TODO; the right fix is to extend `POST /v1/onboarding/compass-demo` to optionally provision a Quartz role too.
+
 ## What you see
 
 A single dashboard page showing:
@@ -64,23 +66,23 @@ The same point as compass-live but framed as a **product surface** rather than a
 Autopilot tick (timer or manual)
   │
   ▼
-GET /api/quartz/position  ──► compass earn positions
+GET /api/state ──► compass earn positions → portfolio NAV + holdings
   │
   ▼
 compute drift vs 60/30/10 target
   │
-  ▼ (if drift > threshold)
-POST /api/quartz/propose ──► Sly: /v1/policy/evaluate-intent
-                              ├── kill_switch precheck
-                              ├── spending_policy engine
-                              ├── contract_policy engine (per-tx ceiling)
-                              ├── venue_allowlist engine
-                              └── drawdown engine (custom check)
+  ▼ (if drift > threshold OR weekly DCA OR manual button tap)
+POST /api/rebalance ──► Sly: /v1/policy/evaluate-intent
+                         ├── kill_switch precheck
+                         ├── spending_policy engine
+                         ├── contract_policy engine (per-tx ceiling)
+                         ├── venue_allowlist engine
+                         └── drawdown engine (custom check)
 
   ├─ approve
   │     │
   │     ▼
-  │   compass earn swap → unsigned tx
+  │   POST /api/trade → compass earn swap → unsigned tx
   │     │
   │     ▼
   │   Sly: /v1/policy/execute-intent → CDP signs + broadcasts
