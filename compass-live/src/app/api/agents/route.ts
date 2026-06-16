@@ -57,6 +57,14 @@ interface AgentRow {
   // wallet address. Used by the picker to surface "needs gas" badge.
   // Wei as decimal string; null when no wallet or on RPC failure.
   ethBalanceWei: string | null;
+  // Compass Safe sidecar — Credit Agent (and any future agent with a
+  // Compass-deployed smart wallet) carries a Safe address that holds
+  // collateral / borrowed funds. Surfaced so the picker can offer a
+  // separate "Fund Safe USDC" CTA when the Safe is bare.
+  safeAddress: string | null;
+  // USDC balance of the Safe, in micro-USDC (6 decimals). null when
+  // no Safe or on RPC failure.
+  safeUsdcMicro: string | null;
 }
 
 // Threshold below which the picker considers the agent under-gassed and
@@ -110,6 +118,8 @@ async function annotate(a: AgentDto): Promise<AgentRow> {
     walletType: null,
     hasCompassAllowlist: false,
     ethBalanceWei: null,
+    safeAddress: null,
+    safeUsdcMicro: null,
   };
   try {
     const w = await slyGet<{
@@ -121,6 +131,12 @@ async function annotate(a: AgentDto): Promise<AgentRow> {
         spending_policy?: {
           contractPolicy?: { allowedContractTypes?: string[] };
         };
+        all_wallets?: Array<{
+          address?: string;
+          wallet_address?: string;
+          wallet_type?: string;
+          provider?: string;
+        }>;
       };
     }>(`/v1/agents/${a.id}/wallet`);
     const d = w.data;
@@ -130,6 +146,13 @@ async function annotate(a: AgentDto): Promise<AgentRow> {
     base.walletType = d.wallet_type ?? null;
     const allowed = d.spending_policy?.contractPolicy?.allowedContractTypes ?? [];
     base.hasCompassAllowlist = allowed.some((v) => COMPASS_VENUES.has(v));
+    // Find the Compass-deployed Safe sidecar (if any). The primary
+    // address is now the EOA after Sly platform PR #160; the Safe lives
+    // in all_wallets alongside it for agents that have one.
+    const safe = (d.all_wallets ?? []).find(
+      (w2) => w2.wallet_type === 'smart_wallet' && w2.provider === 'compass',
+    );
+    base.safeAddress = safe?.address ?? safe?.wallet_address ?? null;
   } catch {
     // Agent has no wallet — leave flags false.
   }
@@ -172,6 +195,48 @@ async function annotateEthBalances(rows: AgentRow[]): Promise<void> {
   }
 }
 
+/**
+ * Probe USDC balance of each agent's Compass Safe via balanceOf on the
+ * Circle USDC contract on Base. Same 20-in-flight batching as the ETH
+ * balance probe. Only agents with a safeAddress are touched.
+ */
+async function annotateSafeUsdcBalances(rows: AgentRow[]): Promise<void> {
+  const RPC_URL = 'https://mainnet.base.org';
+  const USDC_BASE = '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913';
+  // balanceOf(address) selector + 32-byte padded address.
+  const balanceOfData = (addr: string) =>
+    `0x70a08231000000000000000000000000${addr.slice(2).toLowerCase()}`;
+  const targets = rows.filter((r) => r.safeAddress);
+  for (let i = 0; i < targets.length; i += 20) {
+    const batch = targets.slice(i, i + 20);
+    await Promise.all(
+      batch.map(async (row) => {
+        try {
+          const res = await fetch(RPC_URL, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              id: 1,
+              method: 'eth_call',
+              params: [
+                { to: USDC_BASE, data: balanceOfData(row.safeAddress as string) },
+                'latest',
+              ],
+            }),
+          });
+          const body = (await res.json()) as { result?: string };
+          if (body.result) {
+            row.safeUsdcMicro = BigInt(body.result).toString();
+          }
+        } catch {
+          // Leave safeUsdcMicro null on RPC failure.
+        }
+      }),
+    );
+  }
+}
+
 export async function GET() {
   try {
     const agents = await fetchAllAgents();
@@ -190,11 +255,15 @@ export async function GET() {
         (r.status === 'active' ? 1 : 0);
       return score(b) - score(a) || a.name.localeCompare(b.name);
     });
-    // ETH balance for the visible top of the list. Cap at 50 — full-tenant
-    // ETH probing is wasted bandwidth when the picker only shows a handful
-    // by default. Partners scrolling further will see balance load when
-    // they re-fetch.
-    await annotateEthBalances(rows.slice(0, 50));
+    // ETH + Safe USDC balances for the visible top of the list. Cap at 50
+    // — full-tenant probing is wasted bandwidth when the picker only shows
+    // a handful by default. Partners scrolling further will see balances
+    // load when they re-fetch.
+    const visible = rows.slice(0, 50);
+    await Promise.all([
+      annotateEthBalances(visible),
+      annotateSafeUsdcBalances(visible),
+    ]);
     return NextResponse.json({ agents: rows });
   } catch (err) {
     return NextResponse.json(
