@@ -307,6 +307,11 @@ export interface MayaPosition {
     balance: number;     // human-readable units
     currency: string;    // 'USDC' | 'WETH' | …
   };
+  // True when Compass returned a successful response but Maya has no
+  // Aave supply yet (fresh tenant that hasn't run the compass-live
+  // "Onboard agent" scenario). Lets the savings card render a clear
+  // empty state instead of falling back to the seed-value $1,450.
+  empty?: boolean;
 }
 
 interface CompassPositions {
@@ -358,12 +363,19 @@ export async function readPosition(env: MayaEnv): Promise<MayaPosition> {
     }
   }
 
+  const collateralUsd = num(collateral?.usd_value);
+  const suppliedUsdc = num(collateral?.amount_supplied);
+  // Treat as "empty" when Compass reports no supplied collateral. A
+  // fresh tenant lands here until the compass-live "Onboard agent"
+  // scenario seeds Aave.
+  const empty = !collateral || (suppliedUsdc ?? 0) <= 0;
   return {
-    collateralUsd: num(collateral?.usd_value),
-    suppliedUsdc: num(collateral?.amount_supplied),
+    collateralUsd,
+    suppliedUsdc,
     supplyApy: num(collateral?.supply_apy),
     debt,
     safe,
+    ...(empty ? { empty: true } : {}),
   };
 }
 

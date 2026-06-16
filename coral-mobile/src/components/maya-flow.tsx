@@ -350,7 +350,12 @@ export function SavingsCard() {
     };
   }, []);
 
-  const savings = pos?.suppliedUsdc ?? pos?.collateralUsd ?? MAYA.savingsUsd;
+  // Empty = Compass succeeded but Maya has no Aave supply. Without
+  // this flag we'd fall back to the seed MAYA.savingsUsd × DEMO_SCALE
+  // hero ($1,450) which is a phantom for a fresh tenant — and the
+  // credit-checkout flow would dead-end at borrow evaluate-intent.
+  const isEmpty = pos?.empty === true;
+  const savings = pos?.suppliedUsdc ?? pos?.collateralUsd ?? (isEmpty ? 0 : MAYA.savingsUsd);
   const apy = pos?.supplyApy ?? MAYA.supplyApy;
   const debt = pos?.debt ?? [];
 
@@ -390,14 +395,20 @@ export function SavingsCard() {
             <span className="text-[11px] font-medium text-white/65">USDC</span>
           </span>
           <span className="text-[11px] text-white/65">
-            <span className="font-semibold text-mint">{apy.toFixed(2)}% APY</span>
-            {debt.length > 0 && (
-              <span>
-                {' · '}
-                <span className="tabnums text-white/85">
-                  {((debt.reduce((s, d) => s + d.amount, 0) / (pos?.collateralUsd ?? savings)) * 100).toFixed(1)}% used
-                </span>
-              </span>
+            {isEmpty ? (
+              <span className="text-amber-200/85">No Aave position yet</span>
+            ) : (
+              <>
+                <span className="font-semibold text-mint">{apy.toFixed(2)}% APY</span>
+                {debt.length > 0 && (
+                  <span>
+                    {' · '}
+                    <span className="tabnums text-white/85">
+                      {((debt.reduce((s, d) => s + d.amount, 0) / (pos?.collateralUsd ?? savings)) * 100).toFixed(1)}% used
+                    </span>
+                  </span>
+                )}
+              </>
             )}
           </span>
         </div>
@@ -414,9 +425,24 @@ export function SavingsCard() {
             <span className="text-[20px] font-medium text-white/65">USDC</span>
           </p>
           <p className="relative mt-2 text-[13px] text-white/75">
-            Supplied to Aave · earning{' '}
-            <span className="font-semibold text-mint">{apy.toFixed(2)}% APY</span>
+            {isEmpty ? (
+              <span className="text-amber-200/90">No Aave position yet.</span>
+            ) : (
+              <>
+                Supplied to Aave · earning{' '}
+                <span className="font-semibold text-mint">{apy.toFixed(2)}% APY</span>
+              </>
+            )}
           </p>
+          {isEmpty && (
+            <div className="relative mt-4 rounded-2xl bg-amber-500/10 px-4 py-3 text-[11.5px] leading-relaxed text-amber-50/90 ring-1 ring-amber-500/30 backdrop-blur">
+              Run the <span className="font-semibold">Onboard agent</span> scenario in{' '}
+              <span className="font-mono text-amber-200">compass-live</span> to seed
+              this position. Until then the credit-checkout flow has nothing to
+              borrow against.
+            </div>
+          )}
+          {!isEmpty && (
           <div className="relative mt-4 rounded-2xl bg-black/20 px-4 py-3 text-[12px] text-white/80 backdrop-blur">
             {debt.length === 0 ? (
               <span>No outstanding debt — your collateral is free.</span>
@@ -434,6 +460,7 @@ export function SavingsCard() {
             )}
             <LtvBar collateral={pos?.collateralUsd ?? savings} debt={debt.reduce((s, d) => s + d.amount, 0)} />
           </div>
+          )}
           {pos?.safe && pos.safe.balance > 0 && (
             <div className="relative mt-2 rounded-2xl bg-black/25 px-4 py-3 text-[12px] text-white/85 backdrop-blur ring-1 ring-mint/20">
               <div className="flex items-center justify-between">
