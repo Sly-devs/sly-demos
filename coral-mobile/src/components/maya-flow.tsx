@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import {
   MAYA,
+  displayUsdc,
+  fmtUsdc,
   type DemoEvt,
   type MayaBorrowResponse,
   type MayaPositionResponse,
@@ -383,9 +385,9 @@ export function SavingsCard() {
         /* One-line summary so the agent conversation below stays in
            view without scrolling. */
         <div className="relative mt-3 flex items-center justify-between gap-3 text-[14px] text-white">
-          <span className="flex items-baseline gap-1 font-semibold tabnums">
-            <span className="text-[15px] text-white/70">$</span>
-            {savings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <span className="font-semibold tabnums">
+            {fmtUsdc(displayUsdc(savings), { withSuffix: false })}{' '}
+            <span className="text-[11px] font-medium text-white/65">USDC</span>
           </span>
           <span className="text-[11px] text-white/65">
             <span className="font-semibold text-mint">{apy.toFixed(2)}% APY</span>
@@ -404,15 +406,12 @@ export function SavingsCard() {
       {!collapsed && (
         <>
           <p
-            className={`relative mt-4 text-[42px] font-semibold leading-none tracking-tight text-white tabnums transition-opacity duration-300 ${
+            className={`relative mt-4 flex items-baseline gap-2 text-[42px] font-semibold leading-none tracking-tight text-white tabnums transition-opacity duration-300 ${
               loaded ? 'opacity-100' : 'opacity-80'
             }`}
           >
-            <span className="align-top text-[22px] text-white/70">$</span>
-            {savings.toLocaleString('en-US', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
+            {fmtUsdc(displayUsdc(savings), { withSuffix: false })}
+            <span className="text-[20px] font-medium text-white/65">USDC</span>
           </p>
           <p className="relative mt-2 text-[13px] text-white/75">
             Supplied to Aave · earning{' '}
@@ -427,10 +426,7 @@ export function SavingsCard() {
                   <li key={i} className="flex items-center justify-between">
                     <span className="text-white/70">Borrowed</span>
                     <span className="font-semibold tabnums text-white">
-                      {d.amount.toLocaleString('en-US', {
-                        maximumFractionDigits: 6,
-                      })}{' '}
-                      {d.symbol}
+                      {fmtUsdc(displayUsdc(d.amount))}
                     </span>
                   </li>
                 ))}
@@ -443,7 +439,7 @@ export function SavingsCard() {
               <div className="flex items-center justify-between">
                 <span className="text-white/70">In Compass Safe</span>
                 <span className="font-semibold tabnums text-mint">
-                  {pos.safe.balance.toLocaleString('en-US', { maximumFractionDigits: 6 })} {pos.safe.currency}
+                  {fmtUsdc(displayUsdc(pos.safe.balance))}
                 </span>
               </div>
               <p className="mt-1 text-[10.5px] text-white/55">
@@ -462,7 +458,9 @@ export function SavingsCard() {
 
           {/* Repay action — appears when debt > 0; rides the standing
               compass:credit grant from onboarding, so no scope step-up needed. */}
-          {debt.length > 0 && <RepayButton currentDebtUsdc={debt.reduce((s, d) => s + d.amount, 0)} />}
+          {debt.length > 0 && (
+            <RepayButton currentDebtUsdc={displayUsdc(debt.reduce((s, d) => s + d.amount, 0))} />
+          )}
         </>
       )}
     </section>
@@ -566,7 +564,7 @@ function RepayButton({ currentDebtUsdc }: { currentDebtUsdc: number }) {
       >
         {state === 'idle' && (
           <>
-            Repay {currentDebtUsdc.toLocaleString('en-US', { maximumFractionDigits: 6 })} USDC
+            Repay {fmtUsdc(currentDebtUsdc)}
             <span className="text-white/55">↻</span>
           </>
         )}

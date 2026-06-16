@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ApprovalSheet } from './maya-flow';
+import { fmtUsdc } from '@/lib/demo';
 
 type Phase =
   | 'idle'                 // agent message visible, no work in flight
@@ -37,7 +38,15 @@ interface ConfirmResponse {
   phase: 'settled' | 'error';
   receipts?: CheckoutReceipt[];
   events?: { kind: string; label: string }[];
-  product?: { sku: string; label: string; merchant: string; amount: string; asset: string };
+  product?: {
+    sku: string;
+    label: string;
+    merchant: string;
+    amount: string;
+    displayAmount?: string;
+    displayBudget?: string;
+    asset: string;
+  };
   merchant?: { name: string; address: string; agentName: string };
   error?: string;
   step?: string;
@@ -61,8 +70,13 @@ export function CreditCheckoutCard() {
   useEffect(() => {
     if (phase !== 'running') return;
     setActiveStep('borrow');
-    const t1 = setTimeout(() => setActiveStep('withdraw'), 14_000);
-    const t2 = setTimeout(() => setActiveStep('pay'), 28_000);
+    // Snappier visual pacing — the real on-chain settle can take
+    // 20-30s but the viewer doesn't need to live through the wait.
+    // Each step advances on a 4s beat; the StepLine optimistically
+    // shows past steps as "done" so they don't snap back to pending
+    // while we wait for actual receipts to come in.
+    const t1 = setTimeout(() => setActiveStep('withdraw'), 4_000);
+    const t2 = setTimeout(() => setActiveStep('pay'), 8_000);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
@@ -121,18 +135,37 @@ export function CreditCheckoutCard() {
   }
 
   const product = response?.product ?? {
-    sku: 'trail-runner-weekly',
-    label: 'Trail Runner Subscription',
-    merchant: 'TrailCo',
+    sku: 'nike-pegasus-41',
+    label: 'Nike Pegasus 41',
+    merchant: 'Nike',
     amount: '0.10',
+    displayAmount: '145',
+    displayBudget: '150',
     asset: 'USDC',
   };
+  // Always 2 decimals + "USDC" suffix — Maya's holding stablecoin, not
+  // dollars, and labeling it as such makes the demo honest about the
+  // rail. Casual ask in the user bubble drops the decimals.
+  const priceLabel = fmtUsdc(product.displayAmount ?? product.amount);
+  const budgetLabel = fmtUsdc(product.displayBudget ?? '150');
 
   return (
     <section className="mt-6 px-5">
       <h2 className="text-[12px] font-semibold uppercase tracking-[0.18em] text-mute">
-        From your DeFi agent
+        Agent thread
       </h2>
+
+      {/* Maya's outgoing message — right-aligned, no avatar (iMessage
+          pattern). Frames the conversation: she set the budget, the
+          agent answers with the find. Visible in every phase so the
+          transcript stays intact. */}
+      <div className="mt-3 flex justify-end">
+        <div className="max-w-[80%] rounded-[1.2rem] rounded-tr-[6px] bg-coral/15 px-4 py-2.5 ring-1 ring-coral/25">
+          <p className="text-[13px] leading-relaxed text-cloud">
+            Find me running shoes under {product.displayBudget ?? '150'} USDC.
+          </p>
+        </div>
+      </div>
 
       {/* Agent message — chat-bubble style. The agent surfaces the
           spend, Maya taps to consent. Online-status dot lives on the
@@ -151,7 +184,7 @@ export function CreditCheckoutCard() {
           <div className="mt-2 rounded-[1.2rem] rounded-tl-[6px] bg-surface px-4 py-3 ring-1 ring-hairline">
             {phase === 'settled' ? (
               <p className="text-[13px] leading-relaxed text-cloud">
-                Done — paid <span className="font-semibold">{product.merchant}</span> {product.amount} {product.asset} from your Aave credit line. Your dollar of collateral is{' '}
+                Done — paid <span className="font-semibold">{product.merchant}</span> {priceLabel} from your Aave credit line. Your savings are{' '}
                 <span className="font-semibold text-mint">still earning</span>. The bar above shows the debt I just took on for you.
               </p>
             ) : phase === 'error' ? (
@@ -161,11 +194,13 @@ export function CreditCheckoutCard() {
             ) : (
               <>
                 <p className="text-[13px] leading-relaxed text-cloud">
-                  Found your weekly subscription. Want me to cover it with your{' '}
+                  Found the{' '}
+                  <span className="font-semibold text-cloud">{product.label}</span> at{' '}
+                  <span className="font-semibold">{priceLabel}</span> — under your budget. Want me to pay with your{' '}
                   <span className="font-semibold text-coral">Aave credit line</span>?
-                  Your $1 collateral keeps earning — I'll just take on a small loan against it.
+                  Your savings keep earning — I'll just take on a small loan against them.
                 </p>
-                <ProductPill product={product} />
+                <ProductPill product={product} priceLabel={priceLabel} />
               </>
             )}
           </div>
@@ -178,7 +213,7 @@ export function CreditCheckoutCard() {
                 activeStep={activeStep}
                 phase={phase}
                 receipt={response?.receipts?.[0]}
-                label={`Borrow ${product.amount} ${product.asset} from Aave`}
+                label={`Borrow ${priceLabel} from Aave`}
               />
               <StepLine
                 k="withdraw"
@@ -192,7 +227,7 @@ export function CreditCheckoutCard() {
                 activeStep={activeStep}
                 phase={phase}
                 receipt={response?.receipts?.[2]}
-                label={`Pay ${product.merchant} ${product.amount} ${product.asset}`}
+                label={`Pay ${product.merchant} ${priceLabel}`}
               />
             </ol>
           )}
@@ -281,19 +316,29 @@ export function CreditCheckoutCard() {
 
 function ProductPill({
   product,
+  priceLabel,
 }: {
   product: { label: string; merchant: string; amount: string; asset: string };
+  priceLabel: string;
 }) {
   return (
-    <div className="mt-3 flex items-center gap-2.5 rounded-xl bg-canvas/40 px-3 py-2 ring-1 ring-white/[0.04]">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-coral/15 text-[20px] ring-1 ring-coral/25">
-        👟
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[12.5px] font-semibold text-cloud">{product.label}</p>
-        <p className="text-[10.5px] text-mute">
-          {product.merchant} · {product.amount} {product.asset} / week
-        </p>
+    <div className="mt-3 overflow-hidden rounded-2xl bg-gradient-to-br from-canvas/70 via-canvas/50 to-canvas/30 ring-1 ring-white/[0.06]">
+      <div className="flex items-center gap-4 p-3.5">
+        {/* Product hero — big enough to read as a real shopping card,
+            not a thumbnail. Coral→amber gradient panel feels brand-y
+            without committing a sneaker PNG to the repo. */}
+        <div className="flex h-[88px] w-[88px] shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-coral/25 via-coral/10 to-amber-500/20 text-[54px] leading-none ring-1 ring-coral/30">
+          <span aria-hidden>👟</span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-mute">
+            {product.merchant}
+          </p>
+          <p className="mt-1 truncate text-[15px] font-semibold text-cloud">{product.label}</p>
+          <p className="mt-1.5 text-[20px] font-bold tabnums tracking-tight text-cloud">
+            {priceLabel}
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -315,7 +360,14 @@ function StepLine({
   const order: StepKey[] = ['borrow', 'withdraw', 'pay'];
   const idx = order.indexOf(k);
   const activeIdx = activeStep ? order.indexOf(activeStep) : -1;
-  const done = Boolean(receipt?.txHash) || (phase === 'settled' && idx <= activeIdx);
+  // Optimistic done: once the pacing has moved past this step OR the
+  // server has returned its receipt OR the whole flow has settled,
+  // show the checkmark. Avoids the step "snapping back to pending"
+  // when we advance activeStep faster than receipts arrive.
+  const done =
+    Boolean(receipt?.txHash) ||
+    phase === 'settled' ||
+    (phase === 'running' && idx < activeIdx);
   const current = phase === 'running' && idx === activeIdx && !done;
   const pending = !done && !current;
 

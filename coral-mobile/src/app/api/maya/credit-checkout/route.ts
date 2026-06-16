@@ -58,7 +58,14 @@ export async function POST() {
       phase: 'awaiting_approval',
       requestId: scope.data.request_id,
       scope: 'treasury',
-      amount: CHECKOUT_PRODUCT.amount,
+      // Displayed amount drives the approval-sheet hero number. The
+      // real on-chain transfer is still CHECKOUT_PRODUCT.amount — only
+      // the consumer-facing surface is scaled (see DEMO_SCALE). Two
+      // decimals so the sheet reads "145.00 USDC", not "145 USDC".
+      amount: Number(CHECKOUT_PRODUCT.displayAmount).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
       asset: CHECKOUT_PRODUCT.asset,
       merchant: CHECKOUT_PRODUCT.merchant,
       merchantAddress: merchant.eoa,
