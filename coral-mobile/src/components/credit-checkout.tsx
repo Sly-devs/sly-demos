@@ -3,7 +3,14 @@
 import { useEffect, useState } from 'react';
 import { ApprovalSheet } from './maya-flow';
 
-type Phase = 'idle' | 'awaiting_approval' | 'running' | 'settled' | 'error';
+type Phase =
+  | 'idle'                 // agent message visible, no work in flight
+  | 'requesting_approval'  // preflight in flight — request scope grant
+  | 'awaiting_approval'    // approval sheet visible, waiting for tap
+  | 'running'              // confirm in flight — three legs broadcasting
+  | 'settled'              // done, receipts shown
+  | 'error';
+
 type StepKey = 'borrow' | 'withdraw' | 'pay';
 
 interface CheckoutReceipt {
@@ -37,14 +44,13 @@ interface ConfirmResponse {
 }
 
 /**
- * Pay-with-Aave-credit card.
+ * Pay-with-Aave-credit, framed as Maya's agent surfacing a spend.
  *
- * Two-stage UX matches the existing borrow flow:
- *   1. Click "Pay with my Aave credit" → server requests a one_shot
- *      treasury grant → Face-ID approval sheet rises from the bottom.
- *   2. Approve → server runs borrow + withdraw + merchant payment.
- *      Three real on-chain txes on Base mainnet. Refreshes the savings
- *      card via a window event when settled.
+ * The agent opens the conversation ("found this for you · pay from your
+ * Aave credit?"), the product is inline (not a hero), and her tap is the
+ * consent. Server runs preflight → confirm. Each click flips the CTA to
+ * a loading state so it's clear something is happening behind the scenes
+ * (preflight takes ~3-5s while Sly issues the scope request).
  */
 export function CreditCheckoutCard() {
   const [phase, setPhase] = useState<Phase>('idle');
@@ -66,6 +72,7 @@ export function CreditCheckoutCard() {
   async function start() {
     setResponse(null);
     setPending(null);
+    setPhase('requesting_approval');
     try {
       const res = await fetch('/api/maya/credit-checkout', { method: 'POST' });
       const body = (await res.json()) as PreflightResponse;
@@ -106,6 +113,13 @@ export function CreditCheckoutCard() {
     }
   }
 
+  function reset() {
+    setPhase('idle');
+    setPending(null);
+    setResponse(null);
+    setActiveStep(null);
+  }
+
   const product = response?.product ?? {
     sku: 'trail-runner-weekly',
     label: 'Trail Runner Subscription',
@@ -117,109 +131,132 @@ export function CreditCheckoutCard() {
   return (
     <section className="mt-6 px-5">
       <h2 className="text-[12px] font-semibold uppercase tracking-[0.18em] text-mute">
-        Spend without breaking savings
+        From your DeFi agent
       </h2>
-      <p className="mt-1 text-[12px] leading-snug text-mute/90">
-        Your agent borrows against your Aave collateral, routes it through your
-        Compass Safe, and pays the merchant — all gated by a one-shot{' '}
-        <span className="font-mono text-cloud/80">treasury</span> grant from you.
-      </p>
 
-      <div className="mt-3 rounded-[1.6rem] bg-gradient-to-b from-surface to-surface/60 p-4 ring-1 ring-hairline">
-        {/* product card — shoe is the focal visual now */}
-        <div className="flex items-start gap-4">
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-coral/25 via-coral/15 to-coral/5 text-[44px] ring-1 ring-coral/30 shadow-[0_8px_28px_-12px_rgba(255,114,90,0.45)]">
-            👟
-          </div>
-          <div className="min-w-0 flex-1 self-center">
-            <p className="truncate text-[16px] font-semibold text-cloud">{product.label}</p>
-            <p className="mt-0.5 text-[12px] text-mute">{product.merchant}</p>
-            <p className="mt-1 text-[18px] font-semibold tracking-tight text-cloud tabnums">
-              {product.amount} <span className="text-[12px] font-medium text-mute">{product.asset} / week</span>
-            </p>
-          </div>
+      {/* Agent message — chat-bubble style. The agent surfaces the
+          spend, Maya taps to consent. */}
+      <div className="mt-3 flex items-start gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-coral/15 text-[16px] ring-1 ring-coral/30">
+          🏦
+          <span
+            className="absolute -mt-7 ml-6 h-2 w-2 rounded-full bg-mint ring-2 ring-canvas"
+            aria-hidden
+          />
         </div>
-
-        {/* steps */}
-        {(phase === 'running' || phase === 'settled') && (
-          <ol className="mt-4 space-y-2 text-[12px]">
-            <StepLine
-              k="borrow"
-              activeStep={activeStep}
-              phase={phase}
-              receipt={response?.receipts?.[0]}
-              label={`Borrow ${product.amount} ${product.asset} against Aave`}
-              hint="evaluate-intent · credit:borrow · execute via CDP"
-            />
-            <StepLine
-              k="withdraw"
-              activeStep={activeStep}
-              phase={phase}
-              receipt={response?.receipts?.[1]}
-              label="Move funds Compass Safe → your EOA"
-              hint="evaluate-intent · credit:withdraw · execute via CDP"
-            />
-            <StepLine
-              k="pay"
-              activeStep={activeStep}
-              phase={phase}
-              receipt={response?.receipts?.[2]}
-              label={`Pay ${product.merchant} ${product.amount} ${product.asset}`}
-              hint="wallet_transfer · treasury one-shot · CDP-signed USDC.transfer"
-            />
-          </ol>
-        )}
-
-        {/* error pane */}
-        {phase === 'error' && response?.error && (
-          <p className="mt-3 rounded-md bg-rose-500/10 px-3 py-2 text-[11px] leading-snug text-rose-300 ring-1 ring-rose-500/20">
-            <span className="font-semibold">
-              {response.step ? `${response.step}: ` : 'Checkout failed: '}
-            </span>
-            {response.error}
-          </p>
-        )}
-
-        {/* settled summary */}
-        {phase === 'settled' && response?.receipts && (
-          <div className="mt-3 rounded-md bg-mint/8 px-3 py-2.5 text-[11px] leading-snug text-mint/95 ring-1 ring-mint/20">
-            <p className="font-semibold tracking-tight">
-              Settled · 3 bilateral receipts · collateral untouched.
-            </p>
-            <p className="mt-1 text-mute">
-              Aave debt up by {product.amount} {product.asset} · {product.merchant} paid{' '}
-              {response.merchant?.address ? (
-                <span className="font-mono text-cloud/80">
-                  {response.merchant.address.slice(0, 6)}…{response.merchant.address.slice(-4)}
-                </span>
-              ) : null}
-            </p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline gap-2">
+            <p className="text-[13px] font-semibold text-cloud">Maya's DeFi Agent</p>
+            <span className="text-[10.5px] text-mute">just now</span>
           </div>
-        )}
 
-        {/* CTA */}
-        <button
-          onClick={start}
-          disabled={phase === 'running' || phase === 'awaiting_approval'}
-          className={`mt-4 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-[14px] font-semibold text-canvas transition-all ${
-            phase === 'running' || phase === 'awaiting_approval'
-              ? 'bg-coral/60 cursor-wait'
-              : phase === 'settled'
-                ? 'bg-mint hover:brightness-110'
-                : 'bg-coral hover:brightness-110'
-          }`}
-        >
-          {phase === 'idle' && <>Pay with my Aave credit <Arrow /></>}
-          {phase === 'awaiting_approval' && <>Awaiting your approval <Spinner /></>}
-          {phase === 'running' && <>Settling on-chain <Spinner /></>}
-          {phase === 'settled' && <>Run again <Replay /></>}
-          {phase === 'error' && <>Retry</>}
-        </button>
+          {/* Agent bubble */}
+          <div className="mt-2 rounded-[1.2rem] rounded-tl-[6px] bg-surface px-4 py-3 ring-1 ring-hairline">
+            {phase === 'settled' ? (
+              <p className="text-[13px] leading-relaxed text-cloud">
+                Done — paid <span className="font-semibold">{product.merchant}</span> {product.amount} {product.asset} from your Aave credit line. Your dollar of collateral is{' '}
+                <span className="font-semibold text-mint">still earning</span>. The bar above shows the debt I just took on for you.
+              </p>
+            ) : phase === 'error' ? (
+              <p className="text-[13px] leading-relaxed text-cloud">
+                That didn't go through — see the details below. Want me to try again?
+              </p>
+            ) : (
+              <>
+                <p className="text-[13px] leading-relaxed text-cloud">
+                  Found your weekly subscription. Want me to cover it with your{' '}
+                  <span className="font-semibold text-coral">Aave credit line</span>?
+                  Your $1 collateral keeps earning — I'll just take on a small loan against it.
+                </p>
+                <ProductPill product={product} />
+              </>
+            )}
+          </div>
+
+          {/* Step receipts (running / settled / error) */}
+          {(phase === 'running' || phase === 'settled') && (
+            <ol className="mt-3 space-y-2 text-[11.5px]">
+              <StepLine
+                k="borrow"
+                activeStep={activeStep}
+                phase={phase}
+                receipt={response?.receipts?.[0]}
+                label={`Borrow ${product.amount} ${product.asset} from Aave`}
+              />
+              <StepLine
+                k="withdraw"
+                activeStep={activeStep}
+                phase={phase}
+                receipt={response?.receipts?.[1]}
+                label="Move funds Safe → your EOA"
+              />
+              <StepLine
+                k="pay"
+                activeStep={activeStep}
+                phase={phase}
+                receipt={response?.receipts?.[2]}
+                label={`Pay ${product.merchant} ${product.amount} ${product.asset}`}
+              />
+            </ol>
+          )}
+
+          {phase === 'error' && response?.error && (
+            <p className="mt-2 rounded-md bg-rose-500/10 px-3 py-2 text-[11px] leading-snug text-rose-300 ring-1 ring-rose-500/20">
+              <span className="font-semibold">
+                {response.step ? `${response.step}: ` : 'Checkout failed: '}
+              </span>
+              {response.error}
+            </p>
+          )}
+
+          {/* CTA */}
+          <button
+            onClick={phase === 'settled' || phase === 'error' ? reset : start}
+            disabled={
+              phase === 'requesting_approval' || phase === 'awaiting_approval' || phase === 'running'
+            }
+            className={`mt-3 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-[13.5px] font-semibold text-canvas transition-all ${
+              phase === 'requesting_approval' || phase === 'awaiting_approval' || phase === 'running'
+                ? 'bg-coral/60 cursor-wait'
+                : phase === 'settled'
+                  ? 'bg-mint hover:brightness-110'
+                  : phase === 'error'
+                    ? 'bg-coral/85 hover:brightness-110'
+                    : 'bg-coral hover:brightness-110'
+            }`}
+          >
+            {phase === 'idle' && (
+              <>
+                Yes — pay with Aave credit <Arrow />
+              </>
+            )}
+            {phase === 'requesting_approval' && (
+              <>
+                <Spinner /> Asking Sly for permission…
+              </>
+            )}
+            {phase === 'awaiting_approval' && (
+              <>
+                <Spinner /> Waiting for your tap
+              </>
+            )}
+            {phase === 'running' && (
+              <>
+                <Spinner /> Settling on-chain
+              </>
+            )}
+            {phase === 'settled' && (
+              <>
+                <Check /> Done · run another?
+              </>
+            )}
+            {phase === 'error' && <>Try again</>}
+          </button>
+        </div>
       </div>
 
-      {/* Face-ID-styled approval sheet (reuses the same component as the
-          borrow flow). Renders fixed-positioned so it overlays the whole
-          viewport; closes on approve. */}
+      {/* Face-ID-styled approval sheet — overlays the whole device
+          frame; tapping Approve fires confirm(). */}
       {phase === 'awaiting_approval' && pending && pending.requestId && (
         <ApprovalSheet
           pending={{
@@ -245,20 +282,38 @@ export function CreditCheckoutCard() {
   );
 }
 
+function ProductPill({
+  product,
+}: {
+  product: { label: string; merchant: string; amount: string; asset: string };
+}) {
+  return (
+    <div className="mt-3 flex items-center gap-2.5 rounded-xl bg-canvas/40 px-3 py-2 ring-1 ring-white/[0.04]">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-coral/15 text-[20px] ring-1 ring-coral/25">
+        👟
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[12.5px] font-semibold text-cloud">{product.label}</p>
+        <p className="text-[10.5px] text-mute">
+          {product.merchant} · {product.amount} {product.asset} / week
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function StepLine({
   k,
   activeStep,
   phase,
   receipt,
   label,
-  hint,
 }: {
   k: StepKey;
   activeStep: StepKey | null;
   phase: Phase;
   receipt?: CheckoutReceipt;
   label: string;
-  hint: string;
 }) {
   const order: StepKey[] = ['borrow', 'withdraw', 'pay'];
   const idx = order.indexOf(k);
@@ -270,7 +325,7 @@ function StepLine({
   return (
     <li className="flex items-start gap-2.5">
       <span
-        className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${
+        className={`mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-[8.5px] font-bold ${
           done
             ? 'bg-mint text-canvas'
             : current
@@ -282,13 +337,12 @@ function StepLine({
       </span>
       <div className="min-w-0 flex-1">
         <p className={pending ? 'text-mute' : 'text-cloud'}>{label}</p>
-        <p className="text-[10.5px] text-mute/80">{hint}</p>
         {receipt?.txHash && (
           <a
             href={`https://basescan.org/tx/${receipt.txHash}`}
             target="_blank"
             rel="noreferrer"
-            className="mt-0.5 inline-block font-mono text-[10.5px] text-mint/80 hover:text-mint"
+            className="font-mono text-[10px] text-mint/80 hover:text-mint"
           >
             tx {receipt.txHash.slice(0, 10)}…{receipt.txHash.slice(-4)} ↗
           </a>
@@ -301,7 +355,13 @@ function StepLine({
 function Arrow() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M5 12h14M13 5l7 7-7 7"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -315,13 +375,13 @@ function Spinner() {
   );
 }
 
-function Replay() {
+function Check() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
-        d="M4 4v6h6M20 20v-6h-6M5 10a8 8 0 0 1 14-3M19 14a8 8 0 0 1-14 3"
+        d="m5 12 5 5L20 7"
         stroke="currentColor"
-        strokeWidth="2.2"
+        strokeWidth="2.6"
         strokeLinecap="round"
         strokeLinejoin="round"
       />

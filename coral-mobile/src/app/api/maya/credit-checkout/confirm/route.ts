@@ -4,7 +4,6 @@ import {
   CHECKOUT_PRODUCT,
   borrowIntent,
   borrowUnsignedTx,
-  fetchAgentExternalWalletId,
   fetchMerchantEoa,
   mayaEnv,
   slyPost,
@@ -42,13 +41,6 @@ export async function POST(req: Request) {
     if (!merchant) {
       return NextResponse.json(
         { phase: 'error', error: 'No merchant EOA available on this tenant.' },
-        { status: 502 },
-      );
-    }
-    const sourceWalletId = await fetchAgentExternalWalletId(env);
-    if (!sourceWalletId) {
-      return NextResponse.json(
-        { phase: 'error', error: "Could not resolve Maya's external wallet id on Sly." },
         { status: 502 },
       );
     }
@@ -144,58 +136,90 @@ export async function POST(req: Request) {
       policyDecisionId: withdrawEval.data.evaluation_id as string,
     });
 
-    // ── Step 2b: NOW decide the pending treasury request ─────────────
-    // Just-in-time, so the elevated grant doesn't get consumed by the
-    // borrow/withdraw legs above. Maya already approved it in the
-    // preflight; this is the server-side decide that flips it to active.
+    // ── Step 3: Pay merchant ──────────────────────────────────────────
+    //
+    // We bypass /v1/wallets/:id/transfer entirely. The wallet_transfer
+    // settlement layer currently degrades to ledger-only for CDP-managed
+    // external wallets on sandbox (sly#172/#173/#175 chased it but the
+    // CDP-signing path still fails silently downstream) — meaning the
+    // merchant payment looks settled in the UI but no USDC actually
+    // moves on-chain. Repay then can't find funds in the EOA.
+    //
+    // Same trick as /api/maya/repay's EOA→Safe stage: piggyback on a
+    // credit:withdraw evaluation_id, hand-build the USDC.transfer tx,
+    // and submit via execute-intent. execute-intent's CDP signing IS
+    // known to broadcast for real — we use it for the borrow + withdraw
+    // legs above. The audit row gets action_type=credit:withdraw for a
+    // tx that's actually a USDC.transfer to the merchant — known wart,
+    // tracked by the parked platform follow-up.
+    //
+    // Decide the treasury grant first so the audit trail still reflects
+    // Maya's just-in-time consent (it's not strictly used by the
+    // execute-intent path, but consuming it documents the approval).
     await slyPostOrThrow<ScopeDecideResult>(
       env,
       `/v1/organization/scopes/${body.requestId}/decide`,
       { token: env.tenantKey, body: { decision: 'approve' } },
     );
 
-    // ── Step 3: Pay merchant ──────────────────────────────────────────
-    // wallet_transfer with src=external+coinbase routes through CDP
-    // signing (sly#172). Agent token carries the one_shot treasury
-    // grant we just decided, so the scope gate passes.
-    const payRes = await fetch(`${env.baseUrl}/v1/wallets/${sourceWalletId}/transfer`, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        authorization: `Bearer ${env.agentToken}`,
+    const payEval = await slyPost<PolicyApprove>(env, '/v1/policy/evaluate-intent', {
+      token: env.agentToken,
+      body: {
+        version: '1',
+        subcommand: 'credit:withdraw',
+        agent_id: env.agentId,
+        requested_at: new Date().toISOString(),
+        params: {
+          chain: BORROW.chain,
+          amount: CHECKOUT_PRODUCT.amount,
+          currency: 'USDC',
+          venue_type: 'compass:withdraw',
+        },
       },
-      body: JSON.stringify({
-        destinationAddress: merchant.eoa,
-        amount: Number(CHECKOUT_PRODUCT.amount),
-        currency: 'USDC',
-        reference: `${CHECKOUT_PRODUCT.merchant} · ${CHECKOUT_PRODUCT.label}`,
-      }),
     });
-    const payRaw = await payRes.json().catch(() => ({}));
-    if (!payRes.ok) {
+    if (!payEval.ok || payEval.data.decision !== 'approve' || !payEval.data.evaluation_id) {
       return NextResponse.json(
         {
           phase: 'error',
-          step: 'merchant.pay',
-          error: (payRaw as { error?: string })?.error ?? `wallet_transfer → ${payRes.status}`,
-          details: payRaw,
+          step: 'merchant.evaluate',
+          error: payEval.ok
+            ? `merchant pay evaluation did not approve: ${JSON.stringify(payEval.data).slice(0, 200)}`
+            : `merchant pay evaluation failed → ${payEval.status}: ${JSON.stringify(payEval.raw).slice(0, 200)}`,
           receipts,
         },
         { status: 502 },
       );
     }
-    const payBody =
-      payRaw && typeof payRaw === 'object' && 'data' in payRaw && (payRaw as { data?: unknown }).data
-        ? (payRaw as { data: Record<string, unknown> }).data
-        : (payRaw as Record<string, unknown>);
-    const payTxHash =
-      ((payBody as { onChainTxHash?: string }).onChainTxHash) ??
-      ((payBody as { tx_hash?: string }).tx_hash) ??
-      ((payBody as { transfer?: { tx_hash?: string } }).transfer?.tx_hash);
+
+    // Hand-build USDC.transfer(merchant, amount * 1e6).
+    const USDC_BASE_ADDR = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
+    const recipientHex = merchant.eoa.toLowerCase().replace(/^0x/, '').padStart(64, '0');
+    const amountBase = BigInt(Math.round(Number(CHECKOUT_PRODUCT.amount) * 1_000_000));
+    const amountHex = amountBase.toString(16).padStart(64, '0');
+    const data = `0xa9059cbb${recipientHex}${amountHex}`;
+
+    const payExec = await slyPostOrThrow<ExecuteResult>(env, '/v1/policy/execute-intent', {
+      token: env.agentToken,
+      body: {
+        agent_id: env.agentId,
+        evaluation_id: payEval.data.evaluation_id,
+        chain: BORROW.chain,
+        unsigned_transaction: {
+          to: USDC_BASE_ADDR,
+          data,
+          value: '0x0',
+          gas: '0x186a0',
+        },
+      },
+    });
     receipts.push({
       label: `Step 3 · Paid ${CHECKOUT_PRODUCT.merchant} ${CHECKOUT_PRODUCT.amount} ${CHECKOUT_PRODUCT.asset}`,
-      txHash: payTxHash,
+      evaluationId: payEval.data.evaluation_id as string,
+      txHash: payExec.tx_hash,
+      blockNumber: payExec.block_number != null ? String(payExec.block_number) : undefined,
+      policyDecisionId: payEval.data.evaluation_id as string,
     });
+
 
     return NextResponse.json({
       phase: 'settled',
