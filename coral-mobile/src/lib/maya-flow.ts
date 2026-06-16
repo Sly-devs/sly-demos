@@ -36,41 +36,101 @@ export interface MayaEnv {
   baseUrl: string;
 }
 
-export function mayaEnv(): MayaEnv | { error: string } {
+/**
+ * Resolve Maya's runtime env. The partner supplies just three secrets —
+ * MAYA_TENANT_KEY, COMPASS_API_KEY_AUTH, COMPASS_BIN — plus optionally
+ * MAYA_AGENT_ID + MAYA_AGENT_TOKEN to pin a specific agent (written by
+ * `pnpm onboard`). Everything else (agent EOA, parent account, the
+ * Compass-managed Safe address) is derived at boot from the Sly API,
+ * so .env.local never has to mention those.
+ */
+export async function mayaEnv(): Promise<MayaEnv | { error: string }> {
   const tenantKey = process.env.MAYA_TENANT_KEY;
-  const agentToken = process.env.MAYA_AGENT_TOKEN;
-  const agentId = process.env.MAYA_AGENT_ID;
-  const accountId = process.env.MAYA_ACCOUNT_ID;
-  const ownerEoa = process.env.MAYA_OWNER_EOA;
   const compassApiKeyAuth = process.env.COMPASS_API_KEY_AUTH;
   const compassBin = process.env.COMPASS_BIN;
-  const baseUrl = process.env.SLY_API_URL ?? 'https://sandbox.getsly.ai';
+  const baseUrl = (process.env.SLY_API_URL ?? 'https://sandbox.getsly.ai').replace(/\/$/, '');
 
   const missing = [
     !tenantKey && 'MAYA_TENANT_KEY',
-    !agentToken && 'MAYA_AGENT_TOKEN',
-    !agentId && 'MAYA_AGENT_ID',
-    !accountId && 'MAYA_ACCOUNT_ID',
-    !ownerEoa && 'MAYA_OWNER_EOA',
     !compassApiKeyAuth && 'COMPASS_API_KEY_AUTH',
     !compassBin && 'COMPASS_BIN',
   ].filter(Boolean);
   if (missing.length) {
-    return {
-      error: `Missing Maya env: ${missing.join(', ')}. Check apps/demo/coral-mobile/.env.local.`,
-    };
+    return { error: `Missing env: ${missing.join(', ')}. Run \`pnpm onboard\` from ../compass-live or paste your tenant key into .env.local.` };
   }
+
+  let agentId = process.env.MAYA_AGENT_ID;
+  if (!agentId) {
+    const picked = await pickMayaAgent(baseUrl, tenantKey!);
+    if ('error' in picked) return picked;
+    agentId = picked.id;
+  }
+
+  const details = await fetchAgentDetails(baseUrl, tenantKey!, agentId);
+  if ('error' in details) return details;
+
+  const safeAddress = await fetchCompassSafeAddress(baseUrl, tenantKey!, agentId);
+  // safeAddress is optional — coral-mobile still boots if the Onboard
+  // agent scenario hasn't been run yet; the savings card just shows
+  // "live position unavailable" until the Safe is up.
+
   return {
     tenantKey: tenantKey!,
-    agentToken: agentToken!,
-    agentId: agentId!,
-    accountId: accountId!,
-    ownerEoa: ownerEoa!,
-    safeAddress: process.env.MAYA_SAFE_ADDRESS || undefined,
+    agentToken: process.env.MAYA_AGENT_TOKEN ?? tenantKey!,
+    agentId,
+    accountId: details.parentAccountId,
+    ownerEoa: details.walletAddress,
+    safeAddress: process.env.MAYA_SAFE_ADDRESS || safeAddress || undefined,
     compassApiKeyAuth: compassApiKeyAuth!,
     compassBin: compassBin!,
-    baseUrl: baseUrl.replace(/\/$/, ''),
+    baseUrl,
   };
+}
+
+async function pickMayaAgent(baseUrl: string, tenantKey: string): Promise<{ id: string } | { error: string }> {
+  const r = await fetch(`${baseUrl}/v1/agents?limit=100`, { headers: { authorization: `Bearer ${tenantKey}` } });
+  if (!r.ok) return { error: `Failed to list agents (${r.status}). Check MAYA_TENANT_KEY.` };
+  const body = (await r.json()) as { data?: unknown };
+  const list = (Array.isArray(body?.data) ? body.data : (body as { data?: { data?: unknown[] } })?.data?.data ?? []) as Array<{
+    id: string;
+    name?: string;
+    kyaTier?: number;
+    kya_tier?: number;
+    status?: string;
+  }>;
+  if (!list.length) return { error: 'No agents in tenant. Run `pnpm onboard` from ../compass-live first.' };
+  // Prefer an active T2 agent whose name contains "Credit" — that's the
+  // Compass Credit Agent in the standard onboarding seed. Fall back to
+  // first active T2, then first active.
+  const active = list.filter((a) => a.status === 'active');
+  const tier2 = active.filter((a) => (a.kyaTier ?? a.kya_tier ?? 0) >= 2);
+  const credit = tier2.find((a) => /credit/i.test(a.name ?? ''));
+  const picked = credit ?? tier2[0] ?? active[0] ?? list[0];
+  return { id: picked.id };
+}
+
+async function fetchAgentDetails(baseUrl: string, tenantKey: string, agentId: string): Promise<{ parentAccountId: string; walletAddress: string } | { error: string }> {
+  const r = await fetch(`${baseUrl}/v1/agents/${encodeURIComponent(agentId)}`, { headers: { authorization: `Bearer ${tenantKey}` } });
+  if (!r.ok) return { error: `Failed to fetch agent ${agentId.slice(0, 8)}… (${r.status})` };
+  const body = (await r.json()) as { data?: { parentAccountId?: string; parent_account_id?: string; walletAddress?: string; eoa?: string } };
+  const a = body?.data ?? (body as Record<string, unknown>);
+  const parentAccountId = (a as { parentAccountId?: string; parent_account_id?: string }).parentAccountId ?? (a as { parent_account_id?: string }).parent_account_id;
+  const walletAddress = (a as { walletAddress?: string; eoa?: string }).walletAddress ?? (a as { eoa?: string }).eoa;
+  if (!parentAccountId || !walletAddress) return { error: `Agent ${agentId.slice(0, 8)}… missing parent account or EOA in response` };
+  return { parentAccountId, walletAddress };
+}
+
+async function fetchCompassSafeAddress(baseUrl: string, tenantKey: string, agentId: string): Promise<string | null> {
+  try {
+    const r = await fetch(`${baseUrl}/v1/agents/${encodeURIComponent(agentId)}/wallet`, { headers: { authorization: `Bearer ${tenantKey}` } });
+    if (!r.ok) return null;
+    const body = (await r.json()) as { data?: { all_wallets?: Array<{ wallet_type?: string; provider?: string; address?: string; wallet_address?: string }> } };
+    const all = body?.data?.all_wallets ?? [];
+    const safe = all.find((w) => w.wallet_type === 'smart_wallet' && w.provider === 'compass');
+    return safe?.address ?? safe?.wallet_address ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /** Borrow parameters for the demo — deliberately a sub-dollar amount.

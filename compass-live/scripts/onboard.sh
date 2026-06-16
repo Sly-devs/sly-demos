@@ -186,20 +186,14 @@ for env_key in ("COMPASS_API_KEY_AUTH", "COMPASS_BIN"):
         compass_env[env_key] = val
 
 coral_path = pathlib.Path("../coral-mobile/.env.local")
+# coral-mobile derives ownerEoa / accountId / safeAddress at runtime from
+# /v1/agents/:id and /v1/agents/:id/wallet — we only need to write the
+# pinned agent ID + token plus the secrets that aren't derivable.
 lines = ["", "# === Auto-written by pnpm onboard — do not edit by hand ==="]
 lines.append(f"SLY_API_URL={api_url}")
 lines.append(f"MAYA_TENANT_KEY={tenant_key}")
 lines.append(f"MAYA_AGENT_ID={credit['id']}")
 lines.append(f"MAYA_AGENT_TOKEN={credit.get('agent_token', '<agent_token missing in response>')}")
-lines.append(f"MAYA_ACCOUNT_ID={treasury}")
-lines.append(f"MAYA_OWNER_EOA={credit['eoa']}")
-lines.append("# Set MAYA_SAFE_ADDRESS after running Onboard agent in compass-live,")
-lines.append("# then POST /v1/onboarding/compass-demo/register-safe to allow USDC drips:")
-lines.append(f"#   curl -X POST {api_url}/v1/onboarding/compass-demo/register-safe \\\\")
-lines.append("#        -H 'Authorization: Bearer \$MAYA_TENANT_KEY' \\\\")
-lines.append("#        -d '{\"safe_address\":\"0x...\"}'")
-lines.append("MAYA_SAFE_ADDRESS=")
-lines.append("BASE_MAINNET_RPC_URL=https://mainnet.base.org")
 for k, v in compass_env.items():
     lines.append(f"{k}={v}")
 lines.append("# === End auto-written block ===")
