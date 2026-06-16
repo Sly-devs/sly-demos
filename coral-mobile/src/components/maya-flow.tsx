@@ -396,6 +396,7 @@ export function SavingsCard() {
             ))}
           </ul>
         )}
+        <LtvBar collateral={pos?.collateralUsd ?? savings} debt={debt.reduce((s, d) => s + d.amount, 0)} />
       </div>
       {pos?.safe && pos.safe.balance > 0 && (
         <div className="relative mt-2 rounded-2xl bg-black/25 px-4 py-3 text-[12px] text-white/85 backdrop-blur ring-1 ring-mint/20">
@@ -418,7 +419,132 @@ export function SavingsCard() {
           Showing seed values — live position unavailable.
         </p>
       )}
+
+      {/* Repay action — appears when debt > 0; rides the standing
+          compass:credit grant from onboarding, so no scope step-up needed. */}
+      {debt.length > 0 && <RepayButton currentDebtUsdc={debt.reduce((s, d) => s + d.amount, 0)} />}
     </section>
+  );
+}
+
+/* — LTV bar: filled portion = debt / collateral, capped at the Aave
+   USDC cap (75% on Base). Beyond 60% the bar warns; beyond 70% it goes
+   red. The white tick on the bar marks the 75% cap itself. — */
+
+const AAVE_USDC_MAX_LTV = 0.75;
+
+function LtvBar({ collateral, debt }: { collateral: number; debt: number }) {
+  if (!collateral || collateral <= 0) return null;
+  const ltv = debt / collateral;
+  // Render against 100% so the visual cap matches the math; show the 75%
+  // tick explicitly so the user can see how close they're getting.
+  const fillPct = Math.min(ltv * 100, 100);
+  const capPct = AAVE_USDC_MAX_LTV * 100;
+  const tone =
+    ltv >= AAVE_USDC_MAX_LTV
+      ? 'bg-rose-400'
+      : ltv >= 0.7
+        ? 'bg-rose-300'
+        : ltv >= 0.6
+          ? 'bg-amber-300'
+          : 'bg-mint';
+  return (
+    <div className="mt-3 space-y-1.5">
+      <div className="flex items-center justify-between text-[10.5px] uppercase tracking-wider text-white/55">
+        <span>Borrow used</span>
+        <span className="font-mono text-white/75 normal-case tabnums">
+          {(ltv * 100).toFixed(1)}% / {capPct.toFixed(0)}% cap
+        </span>
+      </div>
+      <div className="relative h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
+        <div
+          className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${tone}`}
+          style={{ width: `${fillPct}%` }}
+        />
+        <div
+          className="absolute inset-y-[-3px] w-[1.5px] bg-white/40"
+          style={{ left: `${capPct}%` }}
+          aria-hidden
+        />
+      </div>
+    </div>
+  );
+}
+
+/* — Repay button: one-tap close-out of the USDC debt. Standing
+   compass:credit grant covers it — no scope step-up. Click is consent. — */
+
+function RepayButton({ currentDebtUsdc }: { currentDebtUsdc: number }) {
+  const [state, setState] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
+  const [txHash, setTxHash] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function repay() {
+    setState('running');
+    setError(null);
+    try {
+      const res = await fetch('/api/maya/repay', { method: 'POST' });
+      const body = (await res.json()) as { phase: string; txHash?: string; error?: string; message?: string };
+      if (body.phase === 'settled' && body.txHash) {
+        setTxHash(body.txHash);
+        setState('done');
+        // Aave indexers take ~5s to surface the new debt — the listener
+        // in SavingsCard delays by 4s already, so we just dispatch.
+        window.dispatchEvent(new CustomEvent('maya:position-refresh'));
+      } else if (body.phase === 'noop') {
+        setError(body.message ?? 'Nothing to repay.');
+        setState('error');
+      } else {
+        setError(body.error ?? 'Repay failed.');
+        setState('error');
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setState('error');
+    }
+  }
+
+  return (
+    <div className="relative mt-3">
+      <button
+        onClick={repay}
+        disabled={state === 'running' || state === 'done'}
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-white/12 px-3 py-2 text-[12px] font-semibold text-white ring-1 ring-white/15 backdrop-blur transition-all hover:bg-white/18 disabled:cursor-default disabled:opacity-70"
+      >
+        {state === 'idle' && (
+          <>
+            Repay {currentDebtUsdc.toLocaleString('en-US', { maximumFractionDigits: 6 })} USDC
+            <span className="text-white/55">↻</span>
+          </>
+        )}
+        {state === 'running' && (
+          <>
+            <Spinner /> Repaying on-chain…
+          </>
+        )}
+        {state === 'done' && (
+          <>
+            <Check /> Debt cleared
+          </>
+        )}
+        {state === 'error' && <>Retry repay</>}
+      </button>
+      {txHash && state === 'done' && (
+        <a
+          href={`https://basescan.org/tx/${txHash}`}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-1 block text-center font-mono text-[10.5px] text-mint/80 hover:text-mint"
+        >
+          tx {txHash.slice(0, 10)}…{txHash.slice(-4)} ↗
+        </a>
+      )}
+      {error && state === 'error' && (
+        <p className="mt-1 rounded-md bg-rose-500/15 px-2 py-1 text-[10.5px] text-rose-200 ring-1 ring-rose-500/20">
+          {error.slice(0, 160)}
+        </p>
+      )}
+    </div>
   );
 }
 

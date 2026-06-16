@@ -433,6 +433,54 @@ export function borrowUnsignedTx(env: MayaEnv): CompassTx {
   return json.transaction;
 }
 
+/* ── credit-repay (close out the borrowed position) ────────────────── */
+
+/**
+ * Aave V3 USDC max LTV on Base mainnet. Beyond this Aave reverts the
+ * borrow with GS013. We expose it so the savings card can render a
+ * filled progress bar against the cap.
+ */
+export const AAVE_USDC_MAX_LTV = 0.75;
+
+/** Build the credit:repay intent body. */
+export function repayIntent(env: MayaEnv, amount: string, asset: string = 'USDC') {
+  return {
+    version: '1',
+    subcommand: 'credit:repay',
+    agent_id: env.agentId,
+    requested_at: new Date().toISOString(),
+    params: {
+      chain: BORROW.chain,
+      amount,
+      currency: asset,
+      venue_type: `aave-credit:${asset}`,
+    },
+  };
+}
+
+/** Run the Compass `credit repay` command and return the unsigned tx. */
+export function repayUnsignedTx(env: MayaEnv, amount: string, asset: string = 'USDC'): CompassTx {
+  const json = compass<{ transaction?: CompassTx }>(env, [
+    'credit',
+    'repay',
+    '--repay-token',
+    asset,
+    '--repay-amount',
+    amount,
+    '--owner',
+    env.ownerEoa,
+    '--chain',
+    BORROW.chain,
+    '-o',
+    'json',
+    '--no-interactive',
+  ]);
+  if (!json.transaction?.to || !json.transaction?.data) {
+    throw new Error('Compass repay returned no transaction payload');
+  }
+  return json.transaction;
+}
+
 /* ── credit-checkout (borrow → withdraw → pay merchant) ─────────────── */
 
 /**
