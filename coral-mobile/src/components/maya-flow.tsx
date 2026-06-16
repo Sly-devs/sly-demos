@@ -315,6 +315,10 @@ export function ApprovalSheet({
 export function SavingsCard() {
   const [pos, setPos] = useState<MayaPositionResponse | null>(null);
   const [loaded, setLoaded] = useState(false);
+  // Collapsed → one-line summary so the agent conversation below is
+  // visible without scrolling. Default open on first visit so the hero
+  // number lands; users can tap the header to fold it away.
+  const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -354,71 +358,246 @@ export function SavingsCard() {
         className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl"
         aria-hidden
       />
-      <div className="relative flex items-center justify-between">
+      {/* Header — tap to collapse. The kicker + USDC pill stay
+          visible in both states so it's clear what the row is. */}
+      <button
+        type="button"
+        onClick={() => setCollapsed((c) => !c)}
+        aria-expanded={!collapsed}
+        aria-label={collapsed ? 'Expand savings' : 'Collapse savings'}
+        className="relative flex w-full items-center justify-between gap-3 text-left"
+      >
         <span className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/70">
           Savings · Aave
         </span>
-        <span className="flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[10.5px] font-bold tracking-wide text-white backdrop-blur">
-          <span className="h-1.5 w-1.5 rounded-full bg-mint" aria-hidden />
-          USDC · Base
-        </span>
-      </div>
-      <p
-        className={`relative mt-4 text-[42px] font-semibold leading-none tracking-tight text-white tabnums transition-opacity duration-300 ${
-          loaded ? 'opacity-100' : 'opacity-80'
-        }`}
-      >
-        <span className="align-top text-[22px] text-white/70">$</span>
-        {savings.toLocaleString('en-US', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })}
-      </p>
-      <p className="relative mt-2 text-[13px] text-white/75">
-        Supplied to Aave · earning{' '}
-        <span className="font-semibold text-mint">{apy.toFixed(2)}% APY</span>
-      </p>
-      <div className="relative mt-4 rounded-2xl bg-black/20 px-4 py-3 text-[12px] text-white/80 backdrop-blur">
-        {debt.length === 0 ? (
-          <span>No outstanding debt — your collateral is free.</span>
-        ) : (
-          <ul className="space-y-1">
-            {debt.map((d, i) => (
-              <li key={i} className="flex items-center justify-between">
-                <span className="text-white/70">Borrowed</span>
-                <span className="font-semibold tabnums text-white">
-                  {d.amount.toLocaleString('en-US', {
-                    maximumFractionDigits: 6,
-                  })}{' '}
-                  {d.symbol}
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[10.5px] font-bold tracking-wide text-white backdrop-blur">
+            <span className="h-1.5 w-1.5 rounded-full bg-mint" aria-hidden />
+            USDC · Base
+          </span>
+          <Chevron rotated={!collapsed} />
+        </div>
+      </button>
+
+      {collapsed && (
+        /* One-line summary so the agent conversation below stays in
+           view without scrolling. */
+        <div className="relative mt-3 flex items-center justify-between gap-3 text-[14px] text-white">
+          <span className="flex items-baseline gap-1 font-semibold tabnums">
+            <span className="text-[15px] text-white/70">$</span>
+            {savings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+          <span className="text-[11px] text-white/65">
+            <span className="font-semibold text-mint">{apy.toFixed(2)}% APY</span>
+            {debt.length > 0 && (
+              <span>
+                {' · '}
+                <span className="tabnums text-white/85">
+                  {((debt.reduce((s, d) => s + d.amount, 0) / (pos?.collateralUsd ?? savings)) * 100).toFixed(1)}% used
                 </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-      {pos?.safe && pos.safe.balance > 0 && (
-        <div className="relative mt-2 rounded-2xl bg-black/25 px-4 py-3 text-[12px] text-white/85 backdrop-blur ring-1 ring-mint/20">
-          <div className="flex items-center justify-between">
-            <span className="text-white/70">In Compass Safe</span>
-            <span className="font-semibold tabnums text-mint">
-              {pos.safe.balance.toLocaleString('en-US', { maximumFractionDigits: 6 })} {pos.safe.currency}
-            </span>
-          </div>
-          <p className="mt-1 text-[10.5px] text-white/55">
-            spendable · agent EOA is the Safe owner ·{' '}
-            <span className="font-mono">
-              {pos.safe.address.slice(0, 6)}…{pos.safe.address.slice(-4)}
-            </span>
-          </p>
+              </span>
+            )}
+          </span>
         </div>
       )}
-      {pos?.error && (
-        <p className="relative mt-2 text-[11px] text-white/60">
-          Showing seed values — live position unavailable.
-        </p>
+
+      {!collapsed && (
+        <>
+          <p
+            className={`relative mt-4 text-[42px] font-semibold leading-none tracking-tight text-white tabnums transition-opacity duration-300 ${
+              loaded ? 'opacity-100' : 'opacity-80'
+            }`}
+          >
+            <span className="align-top text-[22px] text-white/70">$</span>
+            {savings.toLocaleString('en-US', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </p>
+          <p className="relative mt-2 text-[13px] text-white/75">
+            Supplied to Aave · earning{' '}
+            <span className="font-semibold text-mint">{apy.toFixed(2)}% APY</span>
+          </p>
+          <div className="relative mt-4 rounded-2xl bg-black/20 px-4 py-3 text-[12px] text-white/80 backdrop-blur">
+            {debt.length === 0 ? (
+              <span>No outstanding debt — your collateral is free.</span>
+            ) : (
+              <ul className="space-y-1">
+                {debt.map((d, i) => (
+                  <li key={i} className="flex items-center justify-between">
+                    <span className="text-white/70">Borrowed</span>
+                    <span className="font-semibold tabnums text-white">
+                      {d.amount.toLocaleString('en-US', {
+                        maximumFractionDigits: 6,
+                      })}{' '}
+                      {d.symbol}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <LtvBar collateral={pos?.collateralUsd ?? savings} debt={debt.reduce((s, d) => s + d.amount, 0)} />
+          </div>
+          {pos?.safe && pos.safe.balance > 0 && (
+            <div className="relative mt-2 rounded-2xl bg-black/25 px-4 py-3 text-[12px] text-white/85 backdrop-blur ring-1 ring-mint/20">
+              <div className="flex items-center justify-between">
+                <span className="text-white/70">In Compass Safe</span>
+                <span className="font-semibold tabnums text-mint">
+                  {pos.safe.balance.toLocaleString('en-US', { maximumFractionDigits: 6 })} {pos.safe.currency}
+                </span>
+              </div>
+              <p className="mt-1 text-[10.5px] text-white/55">
+                spendable · agent EOA is the Safe owner ·{' '}
+                <span className="font-mono">
+                  {pos.safe.address.slice(0, 6)}…{pos.safe.address.slice(-4)}
+                </span>
+              </p>
+            </div>
+          )}
+          {pos?.error && (
+            <p className="relative mt-2 text-[11px] text-white/60">
+              Showing seed values — live position unavailable.
+            </p>
+          )}
+
+          {/* Repay action — appears when debt > 0; rides the standing
+              compass:credit grant from onboarding, so no scope step-up needed. */}
+          {debt.length > 0 && <RepayButton currentDebtUsdc={debt.reduce((s, d) => s + d.amount, 0)} />}
+        </>
       )}
     </section>
+  );
+}
+
+function Chevron({ rotated }: { rotated: boolean }) {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+      className={`text-white/55 transition-transform duration-200 ${rotated ? 'rotate-180' : ''}`}
+    >
+      <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/* — LTV bar: filled portion = debt / collateral, capped at the Aave
+   USDC cap (75% on Base). Beyond 60% the bar warns; beyond 70% it goes
+   red. The white tick on the bar marks the 75% cap itself. — */
+
+const AAVE_USDC_MAX_LTV = 0.75;
+
+function LtvBar({ collateral, debt }: { collateral: number; debt: number }) {
+  if (!collateral || collateral <= 0) return null;
+  const ltv = debt / collateral;
+  const fillPct = Math.min(ltv * 100, 100);
+  const capPct = AAVE_USDC_MAX_LTV * 100;
+  const tone =
+    ltv >= AAVE_USDC_MAX_LTV
+      ? 'bg-rose-400'
+      : ltv >= 0.7
+        ? 'bg-rose-300'
+        : ltv >= 0.6
+          ? 'bg-amber-300'
+          : 'bg-mint';
+  return (
+    <div className="mt-3 space-y-1.5">
+      <div className="flex items-center justify-between text-[10.5px] uppercase tracking-wider text-white/55">
+        <span>Borrow used</span>
+        <span className="font-mono text-white/75 normal-case tabnums">
+          {(ltv * 100).toFixed(1)}% / {capPct.toFixed(0)}% cap
+        </span>
+      </div>
+      <div className="relative h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
+        <div
+          className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${tone}`}
+          style={{ width: `${fillPct}%` }}
+        />
+        <div
+          className="absolute inset-y-[-3px] w-[1.5px] bg-white/40"
+          style={{ left: `${capPct}%` }}
+          aria-hidden
+        />
+      </div>
+    </div>
+  );
+}
+
+/* — Repay button: one-tap close-out of the USDC debt. Standing
+   compass:credit grant covers it — no scope step-up. Click is consent. — */
+
+function RepayButton({ currentDebtUsdc }: { currentDebtUsdc: number }) {
+  const [state, setState] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
+  const [txHash, setTxHash] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function repay() {
+    setState('running');
+    setError(null);
+    try {
+      const res = await fetch('/api/maya/repay', { method: 'POST' });
+      const body = (await res.json()) as { phase: string; txHash?: string; error?: string; message?: string };
+      if (body.phase === 'settled' && body.txHash) {
+        setTxHash(body.txHash);
+        setState('done');
+        window.dispatchEvent(new CustomEvent('maya:position-refresh'));
+      } else if (body.phase === 'noop') {
+        setError(body.message ?? 'Nothing to repay.');
+        setState('error');
+      } else {
+        setError(body.error ?? 'Repay failed.');
+        setState('error');
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setState('error');
+    }
+  }
+
+  return (
+    <div className="relative mt-3">
+      <button
+        onClick={repay}
+        disabled={state === 'running' || state === 'done'}
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-white/12 px-3 py-2 text-[12px] font-semibold text-white ring-1 ring-white/15 backdrop-blur transition-all hover:bg-white/18 disabled:cursor-default disabled:opacity-70"
+      >
+        {state === 'idle' && (
+          <>
+            Repay {currentDebtUsdc.toLocaleString('en-US', { maximumFractionDigits: 6 })} USDC
+            <span className="text-white/55">↻</span>
+          </>
+        )}
+        {state === 'running' && (
+          <>
+            <Spinner /> Repaying on-chain…
+          </>
+        )}
+        {state === 'done' && (
+          <>
+            <Check /> Debt cleared
+          </>
+        )}
+        {state === 'error' && <>Retry repay</>}
+      </button>
+      {txHash && state === 'done' && (
+        <a
+          href={`https://basescan.org/tx/${txHash}`}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-1 block text-center font-mono text-[10.5px] text-mint/80 hover:text-mint"
+        >
+          tx {txHash.slice(0, 10)}…{txHash.slice(-4)} ↗
+        </a>
+      )}
+      {error && state === 'error' && (
+        <p className="mt-1 rounded-md bg-rose-500/15 px-2 py-1 text-[10.5px] text-rose-200 ring-1 ring-rose-500/20">
+          {error.slice(0, 160)}
+        </p>
+      )}
+    </div>
   );
 }
 
