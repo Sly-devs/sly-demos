@@ -13,9 +13,10 @@ Live two-pane operator demo. Left pane shows the agent's MCP-stdio output; right
 cp .env.example .env.local
 $EDITOR .env.local
 
-# 2. Provision your tenant (agents + KYB tier + gas faucet). Idempotent.
+# 2. Provision your tenant (agents + KYB tier + faucets, both demos). Idempotent.
 pnpm onboard
 # → prints the 3 agent IDs/EOAs and what got created
+# → use `pnpm onboard -- --compass-only` to skip the Coral extras
 
 # 3. Run the demo.
 pnpm install
@@ -25,14 +26,9 @@ pnpm dev
 
 `pnpm onboard` reads your `.env.local`, calls the Sly onboarding API,
 and pretty-prints what got provisioned. Re-run any time — the endpoint
-returns the same agent IDs on subsequent calls.
-
-For the Coral × Compass demo (in `../coral-mobile`), use:
-```bash
-pnpm onboard -- --include-coral
-```
-That additionally enables the USDC faucet and pre-drips ETH + USDC + a
-deployed Compass Credit Safe + Aave collateral for Maya's borrow story.
+returns the same agent IDs on subsequent calls. By default it provisions
+for **both compass-live and the Coral × Compass demo** (`../coral-mobile`)
+since they share the same agent set.
 
 ### Prerequisites
 

@@ -7,8 +7,8 @@
 # tells you what to do next.
 #
 # Usage:
-#   ./scripts/onboard.sh                        # default: compass-live only
-#   ./scripts/onboard.sh --include-coral        # also enable Coral × Compass extras
+#   ./scripts/onboard.sh                        # default: compass-live + Coral × Compass
+#   ./scripts/onboard.sh --compass-only         # skip Coral extras (no usdc_faucet, no Coral env)
 #   ./scripts/onboard.sh --api-url <url>        # override API URL (default https://sandbox.getsly.ai)
 #
 # Re-runnable — the endpoint is idempotent.
@@ -18,11 +18,15 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # ── Parse args ─────────────────────────────────────────────────────────
-INCLUDE_CORAL=false
+# Default: both demos enabled. --compass-only opts out of the Coral
+# extras (usdc_faucet flag + Coral env block) when partners want a
+# minimal compass-live-only setup.
+INCLUDE_CORAL=true
 API_URL=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --include-coral) INCLUDE_CORAL=true; shift ;;
+    --compass-only) INCLUDE_CORAL=false; shift ;;
+    --include-coral) INCLUDE_CORAL=true; shift ;;   # legacy alias, no-op now (default)
     --api-url) API_URL="$2"; shift 2 ;;
     -h|--help)
       grep -E '^# ' "$0" | sed 's/^# \?//'
@@ -59,7 +63,7 @@ if [[ "$INCLUDE_CORAL" == "true" ]]; then
   HUMAN_INCLUDE="compass-live + Coral × Compass"
 else
   BODY='{"include":{"compass_live":true,"coral_compass":false}}'
-  HUMAN_INCLUDE="compass-live"
+  HUMAN_INCLUDE="compass-live (Coral extras skipped)"
 fi
 
 echo "→ Provisioning $HUMAN_INCLUDE against $API_URL …"
