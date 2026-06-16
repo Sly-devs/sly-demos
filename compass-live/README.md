@@ -6,22 +6,41 @@ Live two-pane operator demo. Left pane shows the agent's MCP-stdio output; right
 
 ![cover](./screenshots/cover.png)
 
-## Run it
+## Run it (self-serve, two commands)
 
 ```bash
+# 1. Provision agents + feature flags in your Sly tenant. This bumps your
+#    treasury to KYB T2 (sandbox auto-grant), creates 3 CDP-MPC wallets on
+#    Base, and turns on the gas faucet so your fresh EOAs can pay gas.
+#    Idempotent — re-run safely.
+curl -X POST https://sandbox.getsly.ai/v1/onboarding/compass-demo \
+  -H "Authorization: Bearer $SLY_DEMO_TENANT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"include":{"compass_live":true}}'
+
+# 2. Set up env + run the demo.
 cp .env.example .env.local
-# Fill in the Sly sandbox + Compass credentials (see .env.example)
+# Paste your Sly + Compass keys into .env.local (see .env.example)
 pnpm install
 pnpm dev
 # → http://localhost:3270
 ```
 
+The onboarding endpoint returns a `what_happened` list so you can see
+exactly what got created. The picker in the demo will surface the 3
+agents (Earn / Credit / Operator) once .env.local has the right keys.
+
 ### Prerequisites
 
 - Node 20+ and pnpm
-- The `compass` CLI installed locally and authenticated (set `COMPASS_BIN` to its absolute path in `.env.local`)
-- A Sly sandbox tenant key (`pk_test_…`) + the three Compass-flow agent IDs/EOAs (request from `partnerships@getsly.ai` for the pre-provisioned partnership demo tenant — saves an hour of self-provisioning)
+- A Sly sandbox tenant key (`pk_test_…`) — sign up at app.getsly.ai
+- A Compass API key — sign up at api.compasslabs.ai
+- The `compass` CLI installed locally and authenticated (set `COMPASS_BIN` to its absolute path in `.env.local`). Install: `curl -fsSL https://compasslabs.ai/install.sh | bash`
 - Bump file-descriptor limit before `pnpm dev` on macOS: `ulimit -n 65536` (Next.js's file watcher needs headroom; default 256 starves dynamic-route discovery)
+
+### Note for the Coral × Compass demo
+
+If you're also running `../coral-mobile`, include `"coral_compass":true` in the onboarding payload. The endpoint enables `usdc_faucet` for your tenant and pre-drips a small amount of ETH + USDC to your Credit Agent's EOA. To actually deploy the Compass Credit Safe + supply USDC to Aave V3 as collateral (which Coral's savings card reads), run the `Onboard agent` scenario in this demo once after onboarding completes — that step uses the Compass CLI to deploy your Safes interactively.
 
 ### MCP server (vendored)
 
