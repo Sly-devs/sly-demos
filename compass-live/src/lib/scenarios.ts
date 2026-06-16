@@ -53,11 +53,22 @@ export interface SetupSpec {
   tslaInAllowlist: boolean;
 }
 
-// Hard-coded from `seed-compass-demo.ts` deterministic UUIDs + provisioned
-// CDP wallets. Verified via `_probe-compass-agents.mjs` against the local DB.
+// Resolved from .env.local (written by `pnpm onboard`). Falls back to the
+// hardcoded local-dev seed values so dev-mode (seed-compass-demo.ts) still
+// works without env vars. Partner-onboarded tenants get fresh agent IDs
+// per `POST /v1/onboarding/compass-demo`, which the onboard script writes
+// to .env.local as NEXT_PUBLIC_COMPASS_AGENT_{EARN,CREDIT}_{ID,EOA}.
 export const AGENTS: Record<AgentKey, { id: string; eoa: string; tier: number }> = {
-  earn:   { id: '565824b1-1fe4-7260-bcf2-7856f6eb007a', eoa: '0x9Bed369ecE5aAaC52110Be91fAE0A5aE69BF1BDd', tier: 1 },
-  credit: { id: '3c7812a6-0e45-6149-9e74-d807c33b622e', eoa: '0x897Fb7B2447a750B5d5d0054c848CF2aB42c04e3', tier: 2 },
+  earn: {
+    id: process.env.NEXT_PUBLIC_COMPASS_AGENT_EARN_ID || '565824b1-1fe4-7260-bcf2-7856f6eb007a',
+    eoa: process.env.NEXT_PUBLIC_COMPASS_AGENT_EARN_EOA || '0x9Bed369ecE5aAaC52110Be91fAE0A5aE69BF1BDd',
+    tier: 1,
+  },
+  credit: {
+    id: process.env.NEXT_PUBLIC_COMPASS_AGENT_CREDIT_ID || '3c7812a6-0e45-6149-9e74-d807c33b622e',
+    eoa: process.env.NEXT_PUBLIC_COMPASS_AGENT_CREDIT_EOA || '0x897Fb7B2447a750B5d5d0054c848CF2aB42c04e3',
+    tier: 2,
+  },
 };
 
 // Morpho USDC vault on Base (Steakhouse Prime) — same one used in the

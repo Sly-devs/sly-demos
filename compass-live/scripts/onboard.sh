@@ -114,13 +114,56 @@ if on_chain:
 print(f"  What happened:")
 for s in data.get("what_happened", []):
     print(f"    • {s}")
+next_steps = data.get("next_steps", [])
+if next_steps:
+    print()
+    print(f"  Next steps:")
+    for i, s in enumerate(next_steps, 1):
+        print(f"    {i}. {s}")
 PY
+
+# ── Persist the agent IDs/EOAs to .env.local ───────────────────────────
+# scenarios.ts reads NEXT_PUBLIC_COMPASS_AGENT_* to know which agent UUIDs
+# to drive — without these, the demo would target the local-seed defaults
+# (which don't exist in sandbox). We append/overwrite the block in-place
+# so re-runs stay idempotent.
+python3 - <<PY
+import json, re, pathlib
+env_path = pathlib.Path(".env.local")
+data = json.load(open("$RESPONSE_FILE"), strict=False).get("data", {})
+agents = data.get("agents", {})
+if not agents:
+    raise SystemExit(0)
+lines = []
+lines.append("")
+lines.append("# === Auto-written by pnpm onboard — do not edit by hand ===")
+for role in ("earn", "credit", "operator"):
+    a = agents.get(role)
+    if not a: continue
+    role_upper = role.upper()
+    lines.append(f"NEXT_PUBLIC_COMPASS_AGENT_{role_upper}_ID={a['id']}")
+    lines.append(f"NEXT_PUBLIC_COMPASS_AGENT_{role_upper}_EOA={a['eoa']}")
+lines.append("# === End auto-written block ===")
+block = "\n".join(lines) + "\n"
+
+current = env_path.read_text() if env_path.exists() else ""
+# Strip any previous auto-block, then append the fresh one.
+current = re.sub(
+    r"\n?# === Auto-written by pnpm onboard.*?# === End auto-written block ===\n?",
+    "",
+    current,
+    flags=re.DOTALL,
+)
+env_path.write_text(current.rstrip() + "\n" + block)
+print(f"  → wrote {sum(1 for r in ('earn','credit','operator') if agents.get(r))} agent env blocks to .env.local")
+PY
+
 rm -f "$RESPONSE_FILE"
 
 echo
-echo "Next steps:"
-echo "  1. Make sure these are also set in .env.local:"
-echo "       NEXT_PUBLIC_API_URL=$API_URL"
-echo "       COMPASS_API_KEY_AUTH=<your Compass key>"
-echo "       COMPASS_BIN=\$(which compass)     # install: curl -fsSL https://compasslabs.ai/install.sh | bash"
-echo "  2. pnpm install && pnpm dev   # → http://localhost:3270"
+echo "Make sure .env.local has these set:"
+echo "  NEXT_PUBLIC_API_URL=$API_URL"
+echo "  COMPASS_API_KEY_AUTH=<your Compass key>"
+echo "  COMPASS_BIN=\$(which compass)     # install: curl -fsSL https://compasslabs.ai/install.sh | bash"
+echo
+echo "Then: pnpm install && pnpm dev   # → http://localhost:3270"
