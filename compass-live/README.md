@@ -53,21 +53,27 @@ The two-pane runner spawns the Sly × Compass MCP server as a child process — 
 
 ## What you see
 
-Eight scenarios, click any to fire it. The left pane streams `demo-agent-client.mjs` stdout (an MCP stdio client → the `@sly_ai/mcp-compass` wrapper → Sly's policy gate → Compass). The right pane streams curated Sly events: `[precheck]` kill-switch · `[precheck]` scope step-up · `[engine]` spending policy · `[engine]` contract-type allowlist · `[decision]` → `[audit]` policy_evaluations row inserted · `[audit]` audit_log signed · `[exec] $ compass …` (the literal command) · `[compass]` payload returned · `[bilateral_receipt]` evaluation_id ⇄ tx_hash.
+Fourteen scenarios, click any to fire it. The left pane streams `demo-agent-client.mjs` stdout (an MCP stdio client → the `@sly_ai/mcp-compass` wrapper → Sly's policy gate → Compass). The right pane streams curated Sly events: `[precheck]` kill-switch · `[precheck]` scope step-up · `[engine]` spending policy · `[engine]` contract-type allowlist · `[decision]` → `[audit]` policy_evaluations row inserted · `[audit]` audit_log signed · `[exec] $ compass …` (the literal command) · `[compass]` payload returned · `[bilateral_receipt]` evaluation_id ⇄ tx_hash.
+
+Above the scenario list, a **Fund Safe — Sly sponsors $1 USDC** action appears whenever the Credit Safe is under-funded — one tap tops it up via the sandbox faucet so the credit / withdraw legs have something to move.
 
 ### Approve scenarios (single-action)
 
 | Button | What |
 |---|---|
 | Earn deposit · Morpho USDC | Sly approves, CDP signs + broadcasts on Base, real tx hash |
-| Credit borrow · Aave V3 | Sly approves, Compass returns the Permit2 EIP-712 payload (Permit2 signs are not auto-broadcast — by design) |
-| Tokenized buy · TSLAon (Ondo) | Sly approves, Compass returns an EIP-712 order payload |
+| Credit borrow · Aave V3 | Sly approves, Compass returns the Safe execTransaction; Sly signs + broadcasts via CDP |
+| Withdraw · Safe → EOA | `governed_compass_withdraw` — Safe execTransaction moves USDC back to the agent EOA, CDP signs + broadcasts |
+| Tokenized buy · TSLAon (Ondo) | Sly approves, Compass returns an EIP-712 order payload (caller-signed, not auto-broadcast) |
+| Seed Aave collateral · supply $X USDC | Atomic supply-then-borrow: deposits USDC into Aave V3 and takes a $0.01 borrow in one Safe tx. Required prereq for the **Coral × Compass** "Maya has $X earning yield" narrative. |
 
 ### Multi-step scenarios
 
 | Button | What |
 |---|---|
 | Autonomous yield · rebalance | Withdraw from Morpho (low APY) → Deposit into Aave V3 (high APY). Each step independently gated. |
+| Stage-and-deposit · Earn Account | EOA → Earn Account ($0.10 USDC stage) → Morpho vault ($0.05 USDC deposit). Two Sly gates, two receipts. |
+| Onboard agent · 3-surface Compass setup | Deploys the agent's Earn, Credit, and Tokenized Safes (three create-account txs). Each step is Sly-gated independently. The Credit Safe address ends up on the agent's wallet record — coral-mobile reads it from there. |
 | Borrow-and-pay loop | Credit borrow → Safe → EOA withdraw. Two receipts in one flow. |
 | Treasury of agents (FAKED PREVIEW) | Treasury borrows · junior denied · treasury delegates · junior retries. Hierarchical delegation is in our roadmap; the visual is a faked preview. |
 | Perps order · Hyperliquid (FAKED PREVIEW) | Gate is real, broadcast leg is stubbed (Hyperliquid signature scheme is roadmap). |

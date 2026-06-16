@@ -4,7 +4,7 @@ Phone-framed mobile UI showing Maya — a user whose DeFi agent buys things on h
 
 > Part of [Sly-devs/sly-demos](https://github.com/Sly-devs/sly-demos). For the integration architecture, see [`_docs/compass-architecture.md`](../_docs/compass-architecture.md).
 
-![cover](./screenshots/cover.png)
+![cover](./screenshots/cover.gif)
 
 ## Prerequisites
 
