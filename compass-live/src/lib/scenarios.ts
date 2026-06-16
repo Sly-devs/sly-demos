@@ -17,6 +17,7 @@ export type ScenarioId =
   | 'happy_credit_borrow'
   | 'happy_compass_withdraw'
   | 'happy_tokenized_buy'
+  | 'seed_aave_collateral'
   | 'deny_scope'
   | 'deny_allowlist'
   | 'deny_kill_switch'
@@ -52,13 +53,11 @@ export interface SetupSpec {
   tslaInAllowlist: boolean;
 }
 
-// Placeholder shape — the picker (top-right of the demo page) supplies
-// the actual agent_id at request time, and the runner patches step.args
-// with the resolved EOA before invoking the MCP wrapper. These empty
-// strings are the args-template values that get overridden per request.
+// Hard-coded from `seed-compass-demo.ts` deterministic UUIDs + provisioned
+// CDP wallets. Verified via `_probe-compass-agents.mjs` against the local DB.
 export const AGENTS: Record<AgentKey, { id: string; eoa: string; tier: number }> = {
-  earn:   { id: '', eoa: '', tier: 1 },
-  credit: { id: '', eoa: '', tier: 2 },
+  earn:   { id: '565824b1-1fe4-7260-bcf2-7856f6eb007a', eoa: '0x9Bed369ecE5aAaC52110Be91fAE0A5aE69BF1BDd', tier: 1 },
+  credit: { id: '3c7812a6-0e45-6149-9e74-d807c33b622e', eoa: '0x897Fb7B2447a750B5d5d0054c848CF2aB42c04e3', tier: 2 },
 };
 
 // Morpho USDC vault on Base (Steakhouse Prime) — same one used in the
@@ -208,6 +207,31 @@ export const SCENARIOS: Scenario[] = [
     setup: { agent: 'credit', agentStatus: 'active', scopes: { 'compass:tokenized': true }, usdcInAllowlist: true, tslaInAllowlist: true },
     buildCli() {
       return `compass tokenized-equities order --from-token USDC --to-token TSLAon --amount 0.25 --owner ${AGENTS.credit.eoa} ${COMPASS_FLAGS}`;
+    },
+  },
+  {
+    id: 'seed_aave_collateral',
+    label: 'Seed Aave collateral · supply $X USDC',
+    sub: 'governed_credit_borrow with --token-in/--collateral-token — supplies USDC to Aave and takes a $0.01 borrow in one atomic Safe tx. Required prerequisite for the Coral × Compass "Maya has $X earning yield" narrative.',
+    tone: 'good',
+    expected: 'approve',
+    tool: 'governed_credit_borrow',
+    args: {
+      agent_id: AGENTS.credit.id,
+      owner: AGENTS.credit.eoa,
+      chain: 'base',
+      // Atomic supply + minimal self-borrow. `amount` here is the borrow
+      // amount Sly evaluates against the spending policy; the supply is
+      // an implicit prerequisite tracked via venue_type=aave-credit:USDC.
+      borrow_token: 'USDC',
+      amount: '0.01',
+      token_in: 'USDC',
+      collateral_token: 'USDC',
+      amount_in: '1.0',
+    },
+    setup: { agent: 'credit', agentStatus: 'active', scopes: { 'compass:credit': true }, usdcInAllowlist: true, tslaInAllowlist: true },
+    buildCli() {
+      return `compass credit borrow --borrow-token USDC --borrow-amount 0.01 --token-in USDC --collateral-token USDC --amount-in 1.0 --owner ${AGENTS.credit.eoa} --chain base ${COMPASS_FLAGS}`;
     },
   },
   {
