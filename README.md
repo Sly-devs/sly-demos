@@ -13,7 +13,7 @@ Every demo is its own top-level folder. Inside: source + `package.json` (a runna
 | Demo | Port | What it shows |
 |---|---|---|
 | [`compass-live/`](./compass-live) | 3270 | **Operator dashboard.** Two-pane terminal — agent's MCP stdio + every Sly gate that fires + the exact `compass …` CLI invocation. 8 scenarios spanning earn / credit / perps / tokenized. Narrated long-form + 4 short clips in `recordings/`. |
-| [`coral-mobile/`](./coral-mobile) | 3211 | **Consumer mobile.** Maya's DeFi agent buys Nike Pegasus 41s by borrowing USDC against her Aave collateral, withdrawing to her EOA, and paying the merchant — three real on-chain legs gated by Sly. One-tap Repay closes the loop. Phone-framed. Narrated 1:01 hero in `recordings/`. |
+| [`coral-mobile/`](./coral-mobile) | 3211 | **Consumer mobile.** Maya's DeFi agent buys Nike Pegasus 41s by borrowing USDC against her Aave collateral, withdrawing to her EOA, and paying the merchant — three real on-chain legs gated by Sly. One-tap Repay closes the loop. Phone-framed. Animated cover in `screenshots/cover.gif`. |
 | [`quartz-portfolio/`](./quartz-portfolio) | 3242 | Self-driving crypto portfolio (Compass + policy-bounded DCA). |
 
 ### Agentic commerce · ACP / UCP

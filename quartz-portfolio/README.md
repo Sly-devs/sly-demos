@@ -8,9 +8,17 @@ Desktop portfolio UI where Jordan's autopilot agent runs a 60/30/10 USDC/ETH/EXP
 
 ## Run it
 
+The fastest path is the sibling `compass-live` demo's onboarding script with `--with-quartz`. It provisions the Quartz Autopilot agent ($250/tx · $1,250/day · $5,000/month policy) on your tenant and writes the QUARTZ_* env block here automatically:
+
 ```bash
-cp .env.example .env.local
-# Fill in the Sly sandbox + Compass credentials (see .env.example)
+# 1. Provision the agent (opt-in flag for Quartz; idempotent).
+cd ../compass-live
+pnpm onboard --with-quartz
+# → writes SLY_API_URL + QUARTZ_API_KEY + QUARTZ_AGENT_ID + QUARTZ_AGENT_TOKEN
+#   + QUARTZ_ACCOUNT_ID + COMPASS_API_KEY_AUTH to ../quartz-portfolio/.env.local.
+
+# 2. Run quartz-portfolio.
+cd ../quartz-portfolio
 pnpm install
 pnpm dev
 # → http://localhost:3242
@@ -19,10 +27,24 @@ pnpm dev
 ### Prerequisites
 
 - Node 20+ and pnpm
-- A Sly sandbox tenant with the Quartz autopilot agent provisioned (email `partnerships@getsly.ai` for the pre-seeded partnership demo tenant — agent + portfolio-policy already configured)
-- The local `compass` CLI installed and authed (set `COMPASS_BIN` in `.env.local`) — Quartz uses `compass earn swap` for the actual rebalances
+- A Sly sandbox tenant key (`pk_test_…`) — sign up at app.getsly.ai
+- A Compass API key — sign up at api.compasslabs.ai
+- The `compass` CLI on `PATH` (`curl -fsSL https://compasslabs.ai/install.sh | bash`). Override via `COMPASS_BIN` only if you installed it somewhere nonstandard. Quartz uses `compass earn swap` for the actual rebalances.
 
-> **Fresh-tenant gap (vs. coral-mobile / compass-live).** The sibling Compass demos share a `pnpm onboard` script that provisions everything via Sly's onboarding endpoint. Quartz currently does **not** — it expects a pre-seeded "Quartz Autopilot" agent with a custom portfolio-policy (60/30/10 bands + $250/tx cap + -10% drawdown trigger) that the generic onboarding endpoint doesn't yet provision. Until that lands, a fresh partner has to email `partnerships@getsly.ai` for the demo tenant credentials — there's no self-serve path. Tracked in TODO; the right fix is to extend `POST /v1/onboarding/compass-demo` to optionally provision a Quartz role too.
+### Running standalone
+
+If you can't use compass-live's onboard script, run it standalone:
+
+```bash
+cp .env.example .env.local
+# Fill in QUARTZ_API_KEY + QUARTZ_AGENT_ID + QUARTZ_AGENT_TOKEN + QUARTZ_ACCOUNT_ID,
+# plus COMPASS_API_KEY_AUTH. See .env.example for the full list.
+pnpm install && pnpm dev
+```
+
+### About the portfolio policy
+
+The Quartz agent caps surface in Sly's policy engine: per-trade $250, daily $1,250, monthly $5,000 — every trade goes through these gates server-side. The 60/30/10 allocation bands, weekly DCA cadence, and -10% drawdown circuit breaker are **soft constraints enforced in Quartz's client code** (this is fine for a demo; promoting them into the policy engine is a future change once Sly supports allocation-band primitives).
 
 ## What you see
 

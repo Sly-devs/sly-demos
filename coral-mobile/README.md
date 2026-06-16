@@ -132,5 +132,5 @@ The position card (savings supply / APY / debt / Safe balance) reads via `GET /a
 ## Where to go next
 
 - The operator-side view of the same machinery: [`../compass-live/`](../compass-live/)
-- The narrated walkthrough: [`recordings/maya-borrow.mp4`](./recordings/maya-borrow.mp4) (shows an earlier single-tap borrow flow — the credit-checkout walkthrough lives in `docs/demos/coral-credit-checkout/` in the Sly main repo)
+- A 4K walkthrough of the credit-checkout flow lives in `docs/demos/coral-credit-checkout/` in the Sly main repo. The animated cover above shows the page tour; the on-chain flow itself runs in ~30s end-to-end against the sandbox.
 - The MCP wrapper underneath: [`@sly_ai/mcp-compass`](https://www.npmjs.com/package/@sly_ai/mcp-compass)

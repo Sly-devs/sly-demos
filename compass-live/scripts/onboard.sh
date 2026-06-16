@@ -9,6 +9,9 @@
 # Usage:
 #   ./scripts/onboard.sh                        # default: compass-live + Coral × Compass
 #   ./scripts/onboard.sh --compass-only         # skip Coral extras (no usdc_faucet, no Coral env)
+#   ./scripts/onboard.sh --with-quartz          # also provision the Quartz Autopilot agent + env
+#                                               # for ../quartz-portfolio (opt-in; off by default
+#                                               # since not every partner wants the portfolio demo)
 #   ./scripts/onboard.sh --api-url <url>        # override API URL (default https://sandbox.getsly.ai)
 #
 # Re-runnable — the endpoint is idempotent.
@@ -22,11 +25,13 @@ cd "$(dirname "$0")/.."
 # extras (usdc_faucet flag + Coral env block) when partners want a
 # minimal compass-live-only setup.
 INCLUDE_CORAL=true
+INCLUDE_QUARTZ=false
 API_URL=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --compass-only) INCLUDE_CORAL=false; shift ;;
     --include-coral) INCLUDE_CORAL=true; shift ;;   # legacy alias, no-op now (default)
+    --with-quartz) INCLUDE_QUARTZ=true; shift ;;
     --api-url) API_URL="$2"; shift 2 ;;
     -h|--help)
       grep -E '^# ' "$0" | sed 's/^# \?//'
@@ -58,13 +63,13 @@ fi
 API_URL="${API_URL%/}"  # trim trailing slash
 
 # ── Build request body ─────────────────────────────────────────────────
-if [[ "$INCLUDE_CORAL" == "true" ]]; then
-  BODY='{"include":{"compass_live":true,"coral_compass":true}}'
-  HUMAN_INCLUDE="compass-live + Coral × Compass"
-else
-  BODY='{"include":{"compass_live":true,"coral_compass":false}}'
-  HUMAN_INCLUDE="compass-live (Coral extras skipped)"
-fi
+CORAL_FLAG=$( [[ "$INCLUDE_CORAL"  == "true" ]] && echo true || echo false )
+QUARTZ_FLAG=$( [[ "$INCLUDE_QUARTZ" == "true" ]] && echo true || echo false )
+BODY=$(printf '{"include":{"compass_live":true,"coral_compass":%s,"quartz_portfolio":%s}}' "$CORAL_FLAG" "$QUARTZ_FLAG")
+HUMAN_INCLUDE="compass-live"
+[[ "$INCLUDE_CORAL"  == "true" ]] && HUMAN_INCLUDE="$HUMAN_INCLUDE + Coral × Compass"
+[[ "$INCLUDE_QUARTZ" == "true" ]] && HUMAN_INCLUDE="$HUMAN_INCLUDE + Quartz Portfolio"
+[[ "$INCLUDE_CORAL"  != "true" ]] && HUMAN_INCLUDE="$HUMAN_INCLUDE (Coral extras skipped)"
 
 echo "→ Provisioning $HUMAN_INCLUDE against $API_URL …"
 echo
@@ -97,8 +102,9 @@ print(f"  Tenant:   {data['tenant_id']}")
 print(f"  Treasury: {data['treasury_account_id']}")
 print()
 print(f"  Agents:")
-for role in ("earn", "credit", "operator"):
-    a = data["agents"][role]
+for role in ("earn", "credit", "operator", "quartz"):
+    a = data["agents"].get(role)
+    if not a: continue
     print(f"    {role:10s}  T{a['kya_tier']}  {a['eoa']}  id={a['id']}")
 print()
 print(f"  Features: {', '.join(data.get('features_enabled', [])) or '(none)'}")
@@ -208,6 +214,50 @@ current = re.sub(
 )
 coral_path.write_text(current.rstrip() + "\n" + block)
 print(f"  → wrote coral-mobile env block to {coral_path}")
+PY
+fi
+
+# ── Persist the quartz-portfolio vars to ../quartz-portfolio/.env.local ─
+# Symmetric with the coral-mobile block above. Only fires when the user
+# passed --with-quartz AND the sibling demo is checked out next door.
+if [[ "$INCLUDE_QUARTZ" == "true" && -d ../quartz-portfolio ]]; then
+  KEY="$KEY" API_URL="$API_URL" COMPASS_API_KEY_AUTH="${COMPASS_API_KEY_AUTH:-}" COMPASS_BIN="${COMPASS_BIN:-}" python3 - <<PY
+import json, re, pathlib, os
+data = json.load(open("$RESPONSE_FILE"), strict=False).get("data", {})
+quartz = (data.get("agents") or {}).get("quartz") or {}
+treasury = data.get("treasury_account_id") or ""
+tenant_key = os.environ.get("KEY", "")
+api_url = os.environ.get("API_URL", "https://sandbox.getsly.ai")
+if not quartz:
+    raise SystemExit(0)
+
+compass_env = {}
+for env_key in ("COMPASS_API_KEY_AUTH", "COMPASS_BIN"):
+    val = os.environ.get(env_key) or ""
+    if val and not val.startswith("<") and val != "REPLACE_ME":
+        compass_env[env_key] = val
+
+quartz_path = pathlib.Path("../quartz-portfolio/.env.local")
+lines = ["", "# === Auto-written by pnpm onboard — do not edit by hand ==="]
+lines.append(f"SLY_API_URL={api_url}")
+lines.append(f"QUARTZ_API_KEY={tenant_key}")
+lines.append(f"QUARTZ_AGENT_ID={quartz['id']}")
+lines.append(f"QUARTZ_AGENT_TOKEN={quartz.get('agent_token', '<agent_token missing in response>')}")
+lines.append(f"QUARTZ_ACCOUNT_ID={treasury}")
+for k, v in compass_env.items():
+    lines.append(f"{k}={v}")
+lines.append("# === End auto-written block ===")
+block = "\n".join(lines) + "\n"
+
+current = quartz_path.read_text() if quartz_path.exists() else ""
+current = re.sub(
+    r"\n?# === Auto-written by pnpm onboard.*?# === End auto-written block ===\n?",
+    "",
+    current,
+    flags=re.DOTALL,
+)
+quartz_path.write_text(current.rstrip() + "\n" + block)
+print(f"  → wrote quartz-portfolio env block to {quartz_path}")
 PY
 fi
 
