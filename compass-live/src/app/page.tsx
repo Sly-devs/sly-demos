@@ -28,6 +28,8 @@ interface PickableAgent {
   walletAddress: string | null;
   hasCompassAllowlist: boolean;
   ethBalanceWei: string | null;
+  safeAddress: string | null;
+  safeUsdcMicro: string | null;
 }
 
 const PICKER_STORAGE_KEY = 'compass-live:selectedAgentId';
@@ -43,6 +45,16 @@ function isUnderGassed(a: PickableAgent | null): boolean {
   try { return BigInt(a.ethBalanceWei) < MIN_GAS_WEI; } catch { return false; }
 }
 
+// Safe needs USDC when it exists and holds less than 10 cents. The drip
+// is $1 so this avoids re-funding an already-funded Safe.
+const MIN_SAFE_USDC_MICRO = BigInt('100000');
+
+function safeNeedsUsdc(a: PickableAgent | null): boolean {
+  if (!a || !a.safeAddress) return false;
+  if (!a.safeUsdcMicro) return true; // probe failed/null → assume empty
+  try { return BigInt(a.safeUsdcMicro) < MIN_SAFE_USDC_MICRO; } catch { return false; }
+}
+
 function formatEth(wei: string | null): string {
   if (!wei) return '?';
   try {
@@ -50,6 +62,16 @@ function formatEth(wei: string | null): string {
     const whole = w / WEI_PER_ETH;
     const frac = w % WEI_PER_ETH;
     return `${whole}.${frac.toString().padStart(18, '0').slice(0, 6)}`.replace(/0+$/, '').replace(/\.$/, '');
+  } catch { return '?'; }
+}
+
+function formatUsdc(micro: string | null): string {
+  if (!micro) return '0.00';
+  try {
+    const u = BigInt(micro);
+    const whole = u / BigInt(1_000_000);
+    const frac = u % BigInt(1_000_000);
+    return `${whole}.${frac.toString().padStart(6, '0').slice(0, 2)}`;
   } catch { return '?'; }
 }
 
@@ -130,6 +152,8 @@ export default function CompassDemoPage() {
   // /api/agents to refresh balances.
   const [fundingStatus, setFundingStatus] = useState<'idle' | 'funding' | 'ok' | 'error'>('idle');
   const [fundingMessage, setFundingMessage] = useState<string | null>(null);
+  const [usdcStatus, setUsdcStatus] = useState<'idle' | 'funding' | 'ok' | 'error'>('idle');
+  const [usdcMessage, setUsdcMessage] = useState<string | null>(null);
 
   const fundAgent = useCallback(async () => {
     if (!selectedAgentId) return;
@@ -161,6 +185,41 @@ export default function CompassDemoPage() {
     } catch (e) {
       setFundingStatus('error');
       setFundingMessage(`Network error: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }, [selectedAgentId]);
+
+  // Parallel to fundAgent — drips $1 USDC to the agent's Compass Safe
+  // (not the EOA). Compass scenarios that actually move money need the
+  // Safe to hold collateral or repayment funds; this surfaces a one-click
+  // CTA when the Safe is bare.
+  const fundAgentUsdc = useCallback(async () => {
+    if (!selectedAgentId) return;
+    setUsdcStatus('funding');
+    setUsdcMessage(null);
+    try {
+      const res = await fetch('/api/fund-agent-usdc', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agent_id: selectedAgentId }),
+      });
+      const body = (await res.json()) as { tx_hash?: string; error?: string; code?: string; hint?: string };
+      if (!res.ok) {
+        const detail = body.hint ?? body.error ?? 'Faucet failed.';
+        setUsdcStatus('error');
+        setUsdcMessage(`${body.code ?? 'ERROR'} · ${detail}`);
+        return;
+      }
+      setUsdcStatus('ok');
+      setUsdcMessage(`Drip broadcast — tx ${(body.tx_hash ?? '').slice(0, 10)}…`);
+      setTimeout(() => {
+        void fetch('/api/agents')
+          .then((r) => r.json())
+          .then((d: { agents: PickableAgent[] }) => setAgents(d.agents ?? []))
+          .catch(() => {});
+      }, 3500);
+    } catch (e) {
+      setUsdcStatus('error');
+      setUsdcMessage(`Network error: ${e instanceof Error ? e.message : String(e)}`);
     }
   }, [selectedAgentId]);
 
@@ -274,6 +333,9 @@ export default function CompassDemoPage() {
         fundAgent={fundAgent}
         fundingStatus={fundingStatus}
         fundingMessage={fundingMessage}
+        fundAgentUsdc={fundAgentUsdc}
+        usdcStatus={usdcStatus}
+        usdcMessage={usdcMessage}
       />
 
       <div className="mx-auto max-w-6xl mt-8">
@@ -357,6 +419,9 @@ function Header({
   fundAgent,
   fundingStatus,
   fundingMessage,
+  fundAgentUsdc,
+  usdcStatus,
+  usdcMessage,
 }: {
   agents: PickableAgent[];
   selectedAgent: PickableAgent | null;
@@ -367,6 +432,9 @@ function Header({
   fundAgent: () => void;
   fundingStatus: 'idle' | 'funding' | 'ok' | 'error';
   fundingMessage: string | null;
+  fundAgentUsdc: () => void;
+  usdcStatus: 'idle' | 'funding' | 'ok' | 'error';
+  usdcMessage: string | null;
 }) {
   return (
     <div className="mx-auto max-w-6xl">
@@ -391,6 +459,9 @@ function Header({
           fundAgent={fundAgent}
           fundingStatus={fundingStatus}
           fundingMessage={fundingMessage}
+          fundAgentUsdc={fundAgentUsdc}
+          usdcStatus={usdcStatus}
+          usdcMessage={usdcMessage}
         />
       </div>
     </div>
@@ -407,6 +478,9 @@ function AgentPicker({
   fundAgent,
   fundingStatus,
   fundingMessage,
+  fundAgentUsdc,
+  usdcStatus,
+  usdcMessage,
 }: {
   agents: PickableAgent[];
   selectedAgent: PickableAgent | null;
@@ -417,11 +491,15 @@ function AgentPicker({
   fundAgent: () => void;
   fundingStatus: 'idle' | 'funding' | 'ok' | 'error';
   fundingMessage: string | null;
+  fundAgentUsdc: () => void;
+  usdcStatus: 'idle' | 'funding' | 'ok' | 'error';
+  usdcMessage: string | null;
 }) {
   const pickable = agents.filter((a) => a.hasWallet);
   const compassReady = pickable.filter((a) => a.hasCompassAllowlist);
   const other = pickable.filter((a) => !a.hasCompassAllowlist);
   const needsFunding = isUnderGassed(selectedAgent);
+  const needsSafeUsdc = safeNeedsUsdc(selectedAgent);
 
   return (
     <div className="relative shrink-0 mt-1">
@@ -455,6 +533,14 @@ function AgentPicker({
                     </span>
                   </>
                 )}
+                {selectedAgent.safeAddress && (
+                  <>
+                    <span>·</span>
+                    <span className={needsSafeUsdc ? 'text-amber-400' : 'text-slate-400'}>
+                      Safe ${formatUsdc(selectedAgent.safeUsdcMicro)}
+                    </span>
+                  </>
+                )}
               </div>
             </>
           ) : (
@@ -469,24 +555,44 @@ function AgentPicker({
           drips 0.001 ETH on click. Tenant must have the gas_faucet
           feature enabled (the endpoint surfaces a clean 403 → message
           when not). */}
-      {selectedAgent && needsFunding && (
-        <div className="absolute right-0 mt-1 w-full">
-          <button
-            type="button"
-            onClick={fundAgent}
-            disabled={fundingStatus === 'funding'}
-            className="w-full rounded-lg border border-amber-700/50 bg-amber-900/20 px-3 py-2 text-left transition hover:border-amber-600/60 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <div className="text-[10px] uppercase tracking-widest text-amber-400">Needs gas</div>
-            <div className="mt-0.5 text-sm text-slate-100">
-              {fundingStatus === 'funding' ? 'Sending 0.001 ETH…' : 'Fund agent — Sly sponsors gas'}
-            </div>
-            {fundingMessage && (
-              <div className={`mt-0.5 text-[11px] ${fundingStatus === 'error' ? 'text-rose-300' : 'text-emerald-300'}`}>
-                {fundingMessage}
+      {selectedAgent && (needsFunding || needsSafeUsdc) && (
+        <div className="absolute right-0 mt-1 w-full flex flex-col gap-1">
+          {needsFunding && (
+            <button
+              type="button"
+              onClick={fundAgent}
+              disabled={fundingStatus === 'funding'}
+              className="w-full rounded-lg border border-amber-700/50 bg-amber-900/20 px-3 py-2 text-left transition hover:border-amber-600/60 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <div className="text-[10px] uppercase tracking-widest text-amber-400">Needs gas</div>
+              <div className="mt-0.5 text-sm text-slate-100">
+                {fundingStatus === 'funding' ? 'Sending 0.001 ETH…' : 'Fund agent — Sly sponsors gas'}
               </div>
-            )}
-          </button>
+              {fundingMessage && (
+                <div className={`mt-0.5 text-[11px] ${fundingStatus === 'error' ? 'text-rose-300' : 'text-emerald-300'}`}>
+                  {fundingMessage}
+                </div>
+              )}
+            </button>
+          )}
+          {needsSafeUsdc && (
+            <button
+              type="button"
+              onClick={fundAgentUsdc}
+              disabled={usdcStatus === 'funding'}
+              className="w-full rounded-lg border border-sky-700/50 bg-sky-900/20 px-3 py-2 text-left transition hover:border-sky-600/60 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <div className="text-[10px] uppercase tracking-widest text-sky-400">Safe needs USDC</div>
+              <div className="mt-0.5 text-sm text-slate-100">
+                {usdcStatus === 'funding' ? 'Sending $1 USDC…' : 'Fund Safe — Sly sponsors $1 USDC'}
+              </div>
+              {usdcMessage && (
+                <div className={`mt-0.5 text-[11px] ${usdcStatus === 'error' ? 'text-rose-300' : 'text-emerald-300'}`}>
+                  {usdcMessage}
+                </div>
+              )}
+            </button>
+          )}
         </div>
       )}
 
