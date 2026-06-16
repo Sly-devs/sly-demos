@@ -6,29 +6,33 @@ Live two-pane operator demo. Left pane shows the agent's MCP-stdio output; right
 
 ![cover](./screenshots/cover.png)
 
-## Run it (self-serve, two commands)
+## Run it (self-serve, three commands)
 
 ```bash
-# 1. Provision agents + feature flags in your Sly tenant. This bumps your
-#    treasury to KYB T2 (sandbox auto-grant), creates 3 CDP-MPC wallets on
-#    Base, and turns on the gas faucet so your fresh EOAs can pay gas.
-#    Idempotent — re-run safely.
-curl -X POST https://sandbox.getsly.ai/v1/onboarding/compass-demo \
-  -H "Authorization: Bearer $SLY_DEMO_TENANT_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"include":{"compass_live":true}}'
-
-# 2. Set up env + run the demo.
+# 1. Paste your Sly + Compass keys into .env.local.
 cp .env.example .env.local
-# Paste your Sly + Compass keys into .env.local (see .env.example)
+$EDITOR .env.local
+
+# 2. Provision your tenant (agents + KYB tier + gas faucet). Idempotent.
+pnpm onboard
+# → prints the 3 agent IDs/EOAs and what got created
+
+# 3. Run the demo.
 pnpm install
 pnpm dev
 # → http://localhost:3270
 ```
 
-The onboarding endpoint returns a `what_happened` list so you can see
-exactly what got created. The picker in the demo will surface the 3
-agents (Earn / Credit / Operator) once .env.local has the right keys.
+`pnpm onboard` reads your `.env.local`, calls the Sly onboarding API,
+and pretty-prints what got provisioned. Re-run any time — the endpoint
+returns the same agent IDs on subsequent calls.
+
+For the Coral × Compass demo (in `../coral-mobile`), use:
+```bash
+pnpm onboard -- --include-coral
+```
+That additionally enables the USDC faucet and pre-drips ETH + USDC + a
+deployed Compass Credit Safe + Aave collateral for Maya's borrow story.
 
 ### Prerequisites
 
