@@ -6,9 +6,16 @@ Phone-framed mobile UI showing Maya — a user whose AI agent borrows USDC again
 
 ![cover](./screenshots/cover.png)
 
+## Prerequisites
+
+- Node 20+ and pnpm
+- A Sly sandbox tenant key (`pk_test_…`) — sign up at app.getsly.ai
+- A Compass API key — sign up at api.compasslabs.ai
+- The `compass` CLI on `PATH`. Install: `curl -fsSL https://compasslabs.ai/install.sh | bash` (puts it on `PATH` by default). Override via `COMPASS_BIN` only if you installed it somewhere nonstandard.
+
 ## Run it
 
-`.env.local` only needs three real secrets — everything else is derived at runtime from the Sly API. The fastest path is via the sibling `compass-live` demo's onboarding script, which provisions both demos in one call:
+`.env.local` only needs two real secrets — everything else is derived at runtime from the Sly API. The fastest path is via the sibling `compass-live` demo's onboarding script, which provisions both demos in one call:
 
 ```bash
 # From ../compass-live (assumes you've already pasted your Sly + Compass keys
