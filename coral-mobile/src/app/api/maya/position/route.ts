@@ -8,7 +8,7 @@ import { mayaEnv, readPosition } from '@/lib/maya-flow';
  * Read-only — runs no Sly policy flow and broadcasts nothing.
  */
 export async function GET() {
-  const env = mayaEnv();
+  const env = await mayaEnv();
   if ('error' in env) {
     return NextResponse.json({ error: env.error }, { status: 500 });
   }

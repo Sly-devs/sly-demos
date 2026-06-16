@@ -8,15 +8,15 @@ Phone-framed mobile UI showing Maya — a user whose AI agent borrows USDC again
 
 ## Run it
 
-The fastest path is via the sibling `compass-live` demo's onboarding script, which provisions both demos in one call and auto-writes this directory's `.env.local`:
+`.env.local` only needs three real secrets — everything else is derived at runtime from the Sly API. The fastest path is via the sibling `compass-live` demo's onboarding script, which provisions both demos in one call:
 
 ```bash
 # From ../compass-live (assumes you've already pasted your Sly + Compass keys
 # into ../compass-live/.env.local — see that README).
 cd ../compass-live
 pnpm onboard
-# → writes the MAYA_* block to ../coral-mobile/.env.local with the Credit
-#   agent's id/token/EOA, your treasury account id, and your tenant key.
+# → writes MAYA_TENANT_KEY + MAYA_AGENT_ID + MAYA_AGENT_TOKEN + the Compass
+#   key/bin to ../coral-mobile/.env.local. That's it.
 
 # Then back here:
 cd ../coral-mobile
@@ -25,20 +25,17 @@ pnpm dev
 # → http://localhost:3211/savings
 ```
 
-### MAYA_SAFE_ADDRESS
+### What gets derived (and what you don't have to set)
 
-The auto-block leaves `MAYA_SAFE_ADDRESS=` blank because the Compass Credit Safe doesn't exist until you run the **Onboard agent · 3-surface Compass setup** scenario in compass-live, which deploys it locally via the Compass CLI. After that scenario completes:
+When the dev server boots, coral-mobile calls `GET /v1/agents/:id` and `GET /v1/agents/:id/wallet` against the Sly API and reads:
 
-1. Copy the deployed Credit Safe address from compass-live's right pane (the `compass credit create-account` result).
-2. Register it for USDC drips so the savings card can be funded:
-   ```bash
-   curl -X POST https://sandbox.getsly.ai/v1/onboarding/compass-demo/register-safe \
-     -H "Authorization: Bearer $MAYA_TENANT_KEY" \
-     -H "Content-Type: application/json" \
-     -d '{"safe_address":"0xYOUR_SAFE"}'
-   ```
-3. Paste the same address into `.env.local` as `MAYA_SAFE_ADDRESS`.
-4. Restart `pnpm dev` so the Safe address is in the runtime env (Next.js reads server-side env at boot).
+- **owner EOA** ← agent's `walletAddress`
+- **parent account id** ← agent's `parentAccountId`
+- **Compass Safe address** ← the agent's `smart_wallet` (provider=`compass`) row, populated automatically when you run the **Onboard agent · 3-surface Compass setup** scenario in compass-live (Sly's `execute-intent` persists the deployed Safe on every `*_create_account` success)
+
+So you do not need to set `MAYA_OWNER_EOA`, `MAYA_ACCOUNT_ID`, or `MAYA_SAFE_ADDRESS` in `.env.local`. You can pin any of them via env to override, but the default-derived values are correct.
+
+If `MAYA_AGENT_ID` is left blank, the demo auto-picks the first active KYA T2 agent whose name contains "Credit" — which matches the Compass Demo Credit Agent that `pnpm onboard` provisions.
 
 ### Running standalone
 
@@ -46,8 +43,8 @@ If you only want coral-mobile without compass-live:
 
 ```bash
 cp .env.example .env.local
-# Fill in MAYA_TENANT_KEY (pk_test_…), MAYA_AGENT_ID/TOKEN/EOA, MAYA_ACCOUNT_ID,
-# COMPASS_API_KEY_AUTH, COMPASS_BIN, MAYA_SAFE_ADDRESS by hand.
+# Fill in just MAYA_TENANT_KEY, COMPASS_API_KEY_AUTH, COMPASS_BIN.
+# Optionally pin MAYA_AGENT_ID if you have more than one credit agent.
 pnpm install
 pnpm dev
 ```

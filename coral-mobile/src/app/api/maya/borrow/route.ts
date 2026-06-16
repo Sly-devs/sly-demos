@@ -19,7 +19,7 @@ import {
  * scope request; /api/maya/approve finishes it (steps 3–6, which DO broadcast).
  */
 export async function POST() {
-  const env = mayaEnv();
+  const env = await mayaEnv();
   if ('error' in env) {
     return NextResponse.json({ phase: 'error', error: env.error }, { status: 500 });
   }

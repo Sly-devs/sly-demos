@@ -20,7 +20,7 @@ import {
  *   6. agent executes the intent → signs via CDP + broadcasts → { tx_hash, block_number }.
  */
 export async function POST(req: Request) {
-  const env = mayaEnv();
+  const env = await mayaEnv();
   if ('error' in env) {
     return NextResponse.json({ phase: 'error', error: env.error }, { status: 500 });
   }
