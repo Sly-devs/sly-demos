@@ -4,6 +4,7 @@
   "private": true,
   "description": "Sly × Compass — live two-pane operator demo (agent view + platform view, 8 governed scenarios).",
   "scripts": {
+    "onboard": "./scripts/onboard.sh",
     "dev": "next dev --webpack -p 3270",
     "build": "next build --webpack",
     "start": "next start -p 3270",
