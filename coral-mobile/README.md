@@ -1,6 +1,6 @@
 # coral-mobile · Maya × Compass consumer demo
 
-Phone-framed mobile UI showing Maya — a user whose AI agent borrows USDC against her Aave collateral via Compass, governed by Sly.
+Phone-framed mobile UI showing Maya — a user whose DeFi agent buys things on her behalf by borrowing against her Aave collateral via Compass, governed by Sly. Framed as a chat-driven "find me shoes under $150" → "pay with my Aave credit line" flow, with the borrow / withdraw / merchant-pay / repay loop visible on-screen.
 
 > Part of [Sly-devs/sly-demos](https://github.com/Sly-devs/sly-demos). For the integration architecture, see [`_docs/compass-architecture.md`](../_docs/compass-architecture.md).
 
@@ -18,14 +18,20 @@ Phone-framed mobile UI showing Maya — a user whose AI agent borrows USDC again
 `.env.local` only needs two real secrets — everything else is derived at runtime from the Sly API. The fastest path is via the sibling `compass-live` demo's onboarding script, which provisions both demos in one call:
 
 ```bash
-# From ../compass-live (assumes you've already pasted your Sly + Compass keys
-# into ../compass-live/.env.local — see that README).
+# 1. Provision the tenant + agents.
 cd ../compass-live
 pnpm onboard
-# → writes MAYA_TENANT_KEY + MAYA_AGENT_ID + MAYA_AGENT_TOKEN + the Compass
-#   key/bin to ../coral-mobile/.env.local. That's it.
+# → writes MAYA_TENANT_KEY + MAYA_AGENT_ID + MAYA_AGENT_TOKEN + the
+#   Compass key/bin to ../coral-mobile/.env.local. Idempotent.
 
-# Then back here:
+# 2. Seed the on-chain state coral-mobile reads.
+#    Open http://localhost:3270 (compass-live) and click two scenarios in order:
+#       a) Onboard agent · 3-surface Compass setup    — deploys the Compass Safes
+#       b) Seed Aave collateral · supply $X USDC      — atomic supply+min-borrow
+#    Without these, coral-mobile shows an empty-state hero ("No Aave position
+#    yet") because Maya literally hasn't supplied anything to Aave yet.
+
+# 3. Run coral-mobile.
 cd ../coral-mobile
 pnpm install
 pnpm dev
@@ -36,9 +42,9 @@ pnpm dev
 
 When the dev server boots, coral-mobile calls `GET /v1/agents/:id` and `GET /v1/agents/:id/wallet` against the Sly API and reads:
 
-- **owner EOA** ← agent's `walletAddress`
+- **owner EOA** ← agent's external/coinbase wallet
 - **parent account id** ← agent's `parentAccountId`
-- **Compass Safe address** ← the agent's `smart_wallet` (provider=`compass`) row, populated automatically when you run the **Onboard agent · 3-surface Compass setup** scenario in compass-live (Sly's `execute-intent` persists the deployed Safe on every `*_create_account` success)
+- **Compass Safe address** ← the agent's `smart_wallet` (provider=`compass`) row, populated automatically when you run the **Onboard agent · 3-surface Compass setup** scenario in compass-live
 
 So you do not need to set `MAYA_OWNER_EOA`, `MAYA_ACCOUNT_ID`, or `MAYA_SAFE_ADDRESS` in `.env.local`. You can pin any of them via env to override, but the default-derived values are correct.
 
@@ -50,65 +56,81 @@ If you only want coral-mobile without compass-live:
 
 ```bash
 cp .env.example .env.local
-# Fill in just MAYA_TENANT_KEY, COMPASS_API_KEY_AUTH, COMPASS_BIN.
+# Fill in just MAYA_TENANT_KEY, COMPASS_API_KEY_AUTH.
 # Optionally pin MAYA_AGENT_ID if you have more than one credit agent.
 pnpm install
 pnpm dev
 ```
 
+You'll still need a real Aave position on the Credit Agent's Safe for the credit-checkout to settle — the easiest way to get one is to run compass-live's two seed scenarios at least once.
+
 ## What you see
 
 A device-frame mobile UI on `/savings`:
 
-- **Savings card** — Maya's live Aave position (USDC supplied · APY · outstanding debt · the borrowed asset's balance in the Compass-managed Safe)
-- **Agent card** — Maya's DeFi Agent (KYA tier 2, reputation, last-touched venue)
-- **Borrow CTA** — "Borrow $0.10 USDC against savings"
+- **Savings card** — Maya's live Aave position (USDC supplied · APY · outstanding debt · the borrowed asset's balance in the Compass-managed Safe). Tap the header to collapse it down to a one-line summary. Shows an amber empty-state callout if there's no Aave position yet (fresh tenant that hasn't run compass-live's seed scenarios).
+- **Your DeFi agent card** — Maya's DeFi Agent (KYA tier 2 · reputation · "Compass Labs · Aave" venue).
+- **Agent thread** — a two-sided chat:
+  - Maya's outgoing bubble: *"Find me running shoes under 150 USDC."*
+  - The agent's reply: *"Found the Nike Pegasus 41 at 145.00 USDC — under your budget. Want me to pay with your Aave credit line?"* with a product hero card (Nike Pegasus 41 · 145.00 USDC).
+  - CTA: *"Yes — pay with Aave credit →"*
+- **Repay button** (appears whenever debt > 0) — one-tap close-out of the borrowed USDC.
 
-The agent itself is a real Sly-registered agent on your sandbox tenant. The position card reads via `compass credit positions`; the borrow executes through `compass credit borrow` after Sly approves.
+The agent and the position are real. The position card reads via `compass credit positions`; the borrow / withdraw / repay legs execute through Compass after Sly approves; the merchant pay is a real USDC transfer to a peer agent on the same tenant.
+
+### About the on-screen amounts
+
+The sandbox executes deliberately small sub-dollar transactions ($0.10 USDC borrow against ~$1 USDC of Aave collateral), but the UI multiplies displayed amounts by **DEMO_SCALE = 1,450** so the demo lands at human-readable values — *$1,450 in Aave savings*, *$145 Nike Pegasus 41*. The Basescan links go to the real sub-dollar transactions. LTV % and APY are ratios, not scaled.
 
 ## The flow
 
-1. Maya taps **Borrow $0.10 USDC against savings**
-2. Backend route `POST /api/maya/borrow` builds a CompassIntent, posts to Sly's `/v1/policy/evaluate-intent`
-3. Sly **denies** — no active `compass:credit` scope grant. Agent calls `/v1/auth/scopes/request` and the page transitions to **awaiting_approval**
-4. UI presents an approval card with the request id and the amount (Face-ID-styled flow for the demo)
-5. Maya taps **Approve & borrow**
-6. Backend route `POST /api/maya/approve` calls `/v1/organization/scopes/:id/decide` → grant issued
-7. Re-evaluation → approve → `compass credit borrow …` returns the unsigned Permit2 tx
-8. Sly's executor signs via CDP + broadcasts on Base
-9. UI flips to **settled** with the on-chain tx hash + bilateral receipt
-10. The savings card auto-refreshes — new debt visible, borrowed asset balance appears in the Compass Safe row
-
-The full demo runs in ~10 seconds end-to-end against the sandbox. Real on-chain Base transactions.
+1. Maya taps **Yes — pay with Aave credit**.
+2. Backend route `POST /api/maya/credit-checkout` (preflight, no broadcast) builds a `treasury` scope request: agent token → `/v1/auth/scopes/request` → `{ request_id }`. UI transitions to **awaiting_approval**.
+3. UI presents a Face-ID-styled approval sheet showing the merchant + amount.
+4. Maya taps **Approve & pay**.
+5. Backend route `POST /api/maya/credit-checkout/confirm` runs three real on-chain legs sequentially, each independently policy-gated:
+   1. **Borrow** — `compass credit borrow` → Sly's executor signs via CDP + broadcasts. USDC lands in the Compass Safe.
+   2. **Withdraw** — `compass credit transfer --action WITHDRAW` → moves the USDC from the Safe to Maya's EOA.
+   3. **Pay merchant** — hand-built `USDC.transfer(merchant, amount)` executed via `/v1/policy/execute-intent` → CDP signs + broadcasts.
+6. UI flips to **settled** with three checkmarks + three Basescan tx links + a summary bubble from the agent ("Done — paid Nike $145.00 USDC from your Aave credit line. Your savings are still earning.")
+7. The Repay button appears in the savings card; one tap clears the debt via `POST /api/maya/repay`.
 
 ## Architecture
 
 ```
-Maya taps Borrow
+Maya types nothing — the agent thread is pre-framed.
+She taps Yes — pay with Aave credit.
   │
   ▼
-POST /api/maya/borrow ─────────────► Sly: /v1/policy/evaluate-intent → 403 deny (scope_required)
-  │                                  Sly: /v1/auth/scopes/request   → request_id
+POST /api/maya/credit-checkout ────► Sly: /v1/auth/scopes/request   → request_id (treasury, one-shot)
   ▼
 { phase: 'awaiting_approval', requestId }
 
-Maya taps Approve
+Maya taps Approve & pay (Face-ID sheet)
   │
   ▼
-POST /api/maya/approve ────────────► Sly: /v1/organization/scopes/:id/decide → grant issued
-                                     Sly: /v1/policy/evaluate-intent → approve
-                                     Compass: credit borrow → unsigned tx
-                                     Sly: /v1/policy/execute-intent → CDP signs + broadcasts
-                                     ▼
-                                     tx_hash on Base, bilateral receipt returned
-  ▼
-{ phase: 'settled', txHash, blockNumber, events: [...] }
+POST /api/maya/credit-checkout/confirm
+  │
+  ├── 1. Borrow ($0.10 USDC against Aave)
+  │     evaluate-intent → approve → compass credit borrow → execute-intent (CDP signs + broadcasts)
+  │
+  ├── 2. Withdraw Safe → EOA
+  │     evaluate-intent → approve → compass credit transfer → execute-intent
+  │
+  └── 3. Pay merchant ($0.10 USDC → operator EOA)
+        scope decide (consume treasury grant) → evaluate-intent → execute-intent (manual USDC.transfer)
+
+{ phase: 'settled', receipts: [3× { txHash, evaluationId, blockNumber }], events: [...] }
+
+Later, when Maya taps Repay:
+POST /api/maya/repay ──────► position read → top-up Safe if needed → compass credit repay → execute-intent
+                              → debt cleared, Repay button disappears
 ```
 
-The position card (savings supply / APY / debt / Safe balance) reads via `GET /api/maya/position`, which shells `compass credit positions --owner <eoa>` and adds a `balanceOf` RPC call to surface the Compass Safe's actual holdings (Compass routes credit borrows through a per-owner Safe — the borrowed asset lands there, not on the EOA).
+The position card (savings supply / APY / debt / Safe balance) reads via `GET /api/maya/position`, which shells `compass credit positions --owner <eoa>` and adds a `balanceOf` RPC call to surface the Compass Safe's actual holdings (Compass routes credit borrows through a per-owner Safe — the borrowed asset lands there, not on the EOA). When the read returns no `collateral_positions`, the route sets `empty: true` and the savings card renders the empty-state hero instead of the seed fallback.
 
 ## Where to go next
 
-- The operator-side view of the same flow: [`../compass-live/`](../compass-live/)
-- The narrated walkthrough: [`recordings/maya-borrow.mp4`](./recordings/maya-borrow.mp4)
+- The operator-side view of the same machinery: [`../compass-live/`](../compass-live/)
+- The narrated walkthrough: [`recordings/maya-borrow.mp4`](./recordings/maya-borrow.mp4) (shows an earlier single-tap borrow flow — the credit-checkout walkthrough lives in `docs/demos/coral-credit-checkout/` in the Sly main repo)
 - The MCP wrapper underneath: [`@sly_ai/mcp-compass`](https://www.npmjs.com/package/@sly_ai/mcp-compass)
