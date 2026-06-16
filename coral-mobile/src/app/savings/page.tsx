@@ -1,5 +1,5 @@
 import { DeviceFrame } from '@/components/device-frame';
-import { MayaFlow, SavingsCard } from '@/components/maya-flow';
+import { SavingsCard } from '@/components/maya-flow';
 import { CreditCheckoutCard } from '@/components/credit-checkout';
 import { MAYA } from '@/lib/demo';
 
@@ -65,21 +65,6 @@ export default function Savings() {
 
       {/* spend without breaking savings (borrow + withdraw + pay merchant) */}
       <CreditCheckoutCard />
-
-      {/* borrow against savings */}
-      <section className="mt-6 px-5">
-        <h2 className="text-[12px] font-semibold uppercase tracking-[0.18em] text-mute">
-          Borrow against savings
-        </h2>
-        <p className="mt-1 text-[12px] leading-snug text-mute/90">
-          Borrowing raises your risk, so Sly asks for a one-shot{' '}
-          <span className="font-mono text-cloud/80">{MAYA.scope}</span> grant
-          before the agent touches your collateral.
-        </p>
-      </section>
-      <div className="mt-3">
-        <MayaFlow />
-      </div>
 
       {/* footer */}
       <p className="mt-7 px-5 text-center text-[11px] uppercase tracking-[0.18em] text-mute/70">
