@@ -143,8 +143,20 @@ export function CreditCheckoutCard() {
   return (
     <section className="mt-6 px-5">
       <h2 className="text-[12px] font-semibold uppercase tracking-[0.18em] text-mute">
-        From your DeFi agent
+        Agent thread
       </h2>
+
+      {/* Maya's outgoing message — right-aligned, no avatar (iMessage
+          pattern). Frames the conversation: she set the budget, the
+          agent answers with the find. Visible in every phase so the
+          transcript stays intact. */}
+      <div className="mt-3 flex justify-end">
+        <div className="max-w-[80%] rounded-[1.2rem] rounded-tr-[6px] bg-coral/15 px-4 py-2.5 ring-1 ring-coral/25">
+          <p className="text-[13px] leading-relaxed text-cloud">
+            Find me running shoes under {budgetLabel}.
+          </p>
+        </div>
+      </div>
 
       {/* Agent message — chat-bubble style. The agent surfaces the
           spend, Maya taps to consent. Online-status dot lives on the
@@ -173,9 +185,9 @@ export function CreditCheckoutCard() {
             ) : (
               <>
                 <p className="text-[13px] leading-relaxed text-cloud">
-                  You asked for shoes under {budgetLabel}. Found the{' '}
+                  Found the{' '}
                   <span className="font-semibold text-cloud">{product.label}</span> at{' '}
-                  <span className="font-semibold">{priceLabel}</span> — want me to pay with your{' '}
+                  <span className="font-semibold">{priceLabel}</span> — under your budget. Want me to pay with your{' '}
                   <span className="font-semibold text-coral">Aave credit line</span>?
                   Your savings keep earning — I'll just take on a small loan against them.
                 </p>
