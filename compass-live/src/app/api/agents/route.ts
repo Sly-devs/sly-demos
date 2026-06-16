@@ -51,11 +51,17 @@ interface AgentRow {
   hasWallet: boolean;
   walletProvider: string | null;
   walletAddress: string | null;
+  walletType: string | null;
   hasCompassAllowlist: boolean;
   // On-chain gas state — populated by an RPC balanceOf-style call on
   // the wallet address. Used by the picker to surface "needs gas" badge.
-  // Wei as decimal string; null when no wallet or RPC failure.
+  // Wei as decimal string; null when no wallet, RPC failure, or
+  // gas-sponsored agent (we don't probe Compass smart wallets).
   ethBalanceWei: string | null;
+  // True for Compass-deployed smart wallets — Compass's relayer
+  // sponsors gas for these, so the picker should NOT surface
+  // "Needs gas" or the Fund button on them.
+  gasSponsored: boolean;
 }
 
 // Threshold below which the picker considers the agent under-gassed and
@@ -106,8 +112,10 @@ async function annotate(a: AgentDto): Promise<AgentRow> {
     hasWallet: false,
     walletProvider: null,
     walletAddress: null,
+    walletType: null,
     hasCompassAllowlist: false,
     ethBalanceWei: null,
+    gasSponsored: false,
   };
   try {
     const w = await slyGet<{
@@ -115,6 +123,7 @@ async function annotate(a: AgentDto): Promise<AgentRow> {
         address?: string;
         wallet_address?: string;
         provider?: string;
+        wallet_type?: string;
         spending_policy?: {
           contractPolicy?: { allowedContractTypes?: string[] };
         };
@@ -124,6 +133,10 @@ async function annotate(a: AgentDto): Promise<AgentRow> {
     base.hasWallet = true;
     base.walletProvider = d.provider ?? null;
     base.walletAddress = d.address ?? d.wallet_address ?? null;
+    base.walletType = d.wallet_type ?? null;
+    // Compass smart wallets are gas-sponsored by Compass's relayer —
+    // they don't need ETH and a plain transfer would revert anyway.
+    base.gasSponsored = d.provider === 'compass' || d.wallet_type === 'smart_wallet';
     const allowed = d.spending_policy?.contractPolicy?.allowedContractTypes ?? [];
     base.hasCompassAllowlist = allowed.some((v) => COMPASS_VENUES.has(v));
   } catch {
@@ -139,7 +152,10 @@ async function annotate(a: AgentDto): Promise<AgentRow> {
  */
 async function annotateEthBalances(rows: AgentRow[]): Promise<void> {
   const RPC_URL = 'https://mainnet.base.org';
-  const targets = rows.filter((r) => r.walletAddress);
+  // Skip gas-sponsored wallets — Compass pays their gas, so the balance
+  // is irrelevant to the picker's "needs gas" badge. Probing them just
+  // wastes RPC budget.
+  const targets = rows.filter((r) => r.walletAddress && !r.gasSponsored);
   for (let i = 0; i < targets.length; i += 20) {
     const batch = targets.slice(i, i + 20);
     await Promise.all(
