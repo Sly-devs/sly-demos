@@ -217,6 +217,7 @@ echo
 echo "Make sure .env.local has these set:"
 echo "  NEXT_PUBLIC_API_URL=$API_URL"
 echo "  COMPASS_API_KEY_AUTH=<your Compass key>"
-echo "  COMPASS_BIN=\$(which compass)     # install: curl -fsSL https://compasslabs.ai/install.sh | bash"
+echo "  # COMPASS_BIN is only needed if 'compass' is NOT on PATH."
+echo "  # Install via: curl -fsSL https://compasslabs.ai/install.sh | bash"
 echo
 echo "Then: pnpm install && pnpm dev   # → http://localhost:3270"

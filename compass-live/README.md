@@ -35,7 +35,7 @@ since they share the same agent set.
 - Node 20+ and pnpm
 - A Sly sandbox tenant key (`pk_test_…`) — sign up at app.getsly.ai
 - A Compass API key — sign up at api.compasslabs.ai
-- The `compass` CLI installed locally and authenticated (set `COMPASS_BIN` to its absolute path in `.env.local`). Install: `curl -fsSL https://compasslabs.ai/install.sh | bash`
+- The `compass` CLI installed locally and on `PATH`. Install: `curl -fsSL https://compasslabs.ai/install.sh | bash` (puts it on `PATH` by default). Override via `COMPASS_BIN` only if you installed it somewhere nonstandard.
 - Bump file-descriptor limit before `pnpm dev` on macOS: `ulimit -n 65536` (Next.js's file watcher needs headroom; default 256 starves dynamic-route discovery)
 
 ### Pairing with the Coral × Compass demo

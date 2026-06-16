@@ -37,23 +37,27 @@ export interface MayaEnv {
 }
 
 /**
- * Resolve Maya's runtime env. The partner supplies just three secrets —
- * MAYA_TENANT_KEY, COMPASS_API_KEY_AUTH, COMPASS_BIN — plus optionally
+ * Resolve Maya's runtime env. The partner supplies two secrets —
+ * MAYA_TENANT_KEY + COMPASS_API_KEY_AUTH — plus optionally
  * MAYA_AGENT_ID + MAYA_AGENT_TOKEN to pin a specific agent (written by
- * `pnpm onboard`). Everything else (agent EOA, parent account, the
- * Compass-managed Safe address) is derived at boot from the Sly API,
- * so .env.local never has to mention those.
+ * `pnpm onboard`). The Compass binary is assumed to be on PATH per the
+ * installer's default (`curl -fsSL https://compasslabs.ai/install.sh | bash`);
+ * COMPASS_BIN remains as an override for nonstandard installs.
+ * Everything else (agent EOA, parent account, the Compass-managed Safe
+ * address) is derived at boot from the Sly API, so .env.local never has
+ * to mention those.
  */
 export async function mayaEnv(): Promise<MayaEnv | { error: string }> {
   const tenantKey = process.env.MAYA_TENANT_KEY;
   const compassApiKeyAuth = process.env.COMPASS_API_KEY_AUTH;
-  const compassBin = process.env.COMPASS_BIN;
+  // Bare `compass` resolves via PATH at spawn time — the canonical
+  // installer puts it on PATH by default. COMPASS_BIN is an override.
+  const compassBin = process.env.COMPASS_BIN || 'compass';
   const baseUrl = (process.env.SLY_API_URL ?? 'https://sandbox.getsly.ai').replace(/\/$/, '');
 
   const missing = [
     !tenantKey && 'MAYA_TENANT_KEY',
     !compassApiKeyAuth && 'COMPASS_API_KEY_AUTH',
-    !compassBin && 'COMPASS_BIN',
   ].filter(Boolean);
   if (missing.length) {
     return { error: `Missing env: ${missing.join(', ')}. Run \`pnpm onboard\` from ../compass-live or paste your tenant key into .env.local.` };
@@ -82,7 +86,7 @@ export async function mayaEnv(): Promise<MayaEnv | { error: string }> {
     ownerEoa: details.walletAddress,
     safeAddress: process.env.MAYA_SAFE_ADDRESS || safeAddress || undefined,
     compassApiKeyAuth: compassApiKeyAuth!,
-    compassBin: compassBin!,
+    compassBin,
     baseUrl,
   };
 }
