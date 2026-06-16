@@ -158,6 +158,65 @@ env_path.write_text(current.rstrip() + "\n" + block)
 print(f"  → wrote {sum(1 for r in ('earn','credit','operator') if agents.get(r))} agent env blocks to .env.local")
 PY
 
+# ── Persist the coral-mobile vars to ../coral-mobile/.env.local ────────
+# If the sibling coral-mobile demo is present we write its MAYA_* env
+# block too. The Credit agent powers coral-mobile (Maya), so we wire it
+# in by default. MAYA_SAFE_ADDRESS is intentionally left blank — it's
+# only known after the partner runs the Onboard agent scenario in
+# compass-live AND registers the Safe via:
+#   curl -X POST $API_URL/v1/onboarding/compass-demo/register-safe \
+#     -H "Authorization: Bearer $KEY" \
+#     -d '{"safe_address":"0x..."}'
+if [[ "$INCLUDE_CORAL" == "true" && -d ../coral-mobile ]]; then
+  KEY="$KEY" API_URL="$API_URL" COMPASS_API_KEY_AUTH="${COMPASS_API_KEY_AUTH:-}" COMPASS_BIN="${COMPASS_BIN:-}" python3 - <<PY
+import json, re, pathlib, os
+data = json.load(open("$RESPONSE_FILE"), strict=False).get("data", {})
+credit = (data.get("agents") or {}).get("credit") or {}
+treasury = data.get("treasury_account_id") or ""
+tenant_key = os.environ.get("KEY", "")
+api_url = os.environ.get("API_URL", "https://sandbox.getsly.ai")
+if not credit:
+    raise SystemExit(0)
+
+# Reuse Compass-side env from compass-live so partners don't paste twice.
+compass_env = {}
+for env_key in ("COMPASS_API_KEY_AUTH", "COMPASS_BIN"):
+    val = os.environ.get(env_key) or ""
+    if val and not val.startswith("<") and val != "REPLACE_ME":
+        compass_env[env_key] = val
+
+coral_path = pathlib.Path("../coral-mobile/.env.local")
+lines = ["", "# === Auto-written by pnpm onboard — do not edit by hand ==="]
+lines.append(f"SLY_API_URL={api_url}")
+lines.append(f"MAYA_TENANT_KEY={tenant_key}")
+lines.append(f"MAYA_AGENT_ID={credit['id']}")
+lines.append(f"MAYA_AGENT_TOKEN={credit.get('agent_token', '<agent_token missing in response>')}")
+lines.append(f"MAYA_ACCOUNT_ID={treasury}")
+lines.append(f"MAYA_OWNER_EOA={credit['eoa']}")
+lines.append("# Set MAYA_SAFE_ADDRESS after running Onboard agent in compass-live,")
+lines.append("# then POST /v1/onboarding/compass-demo/register-safe to allow USDC drips:")
+lines.append(f"#   curl -X POST {api_url}/v1/onboarding/compass-demo/register-safe \\\\")
+lines.append("#        -H 'Authorization: Bearer \$MAYA_TENANT_KEY' \\\\")
+lines.append("#        -d '{\"safe_address\":\"0x...\"}'")
+lines.append("MAYA_SAFE_ADDRESS=")
+lines.append("BASE_MAINNET_RPC_URL=https://mainnet.base.org")
+for k, v in compass_env.items():
+    lines.append(f"{k}={v}")
+lines.append("# === End auto-written block ===")
+block = "\n".join(lines) + "\n"
+
+current = coral_path.read_text() if coral_path.exists() else ""
+current = re.sub(
+    r"\n?# === Auto-written by pnpm onboard.*?# === End auto-written block ===\n?",
+    "",
+    current,
+    flags=re.DOTALL,
+)
+coral_path.write_text(current.rstrip() + "\n" + block)
+print(f"  → wrote coral-mobile env block to {coral_path}")
+PY
+fi
+
 rm -f "$RESPONSE_FILE"
 
 echo
