@@ -90,15 +90,30 @@ export async function fetchMerchants(): Promise<{
     const client = asterClient();
     const accounts =
       await client.apiGet<SlyAccount[]>('/v1/accounts?limit=50');
+    // Join the live accounts to the static directory by either ID OR
+    // name. The static IDs in data.ts were captured from a specific
+    // seed run; partners onboarding fresh tenants via
+    // scripts/onboard.sh get freshly-generated UUIDs, so a name-fallback
+    // is what lets their live mode light up. Each merchant in the
+    // static directory has a unique display name (Lume Goods, North
+    // Field Supply, …), so name collisions are not a concern here.
     const byId = new Map(accounts.map((a) => [a.id, a]));
+    const byName = new Map(
+      accounts.map((a) => [a.name.trim().toLowerCase(), a]),
+    );
 
     const merchants = MERCHANTS.map((base) => {
-      const acct = byId.get(base.id);
+      const acct =
+        byId.get(base.id) ?? byName.get(base.name.trim().toLowerCase());
       if (!acct) return base;
       const meta = (acct.metadata ?? {}) as Record<string, unknown>;
       const catalog = Array.isArray(meta.catalog) ? meta.catalog : [];
       return {
         ...base,
+        // Carry the LIVE account id so downstream API calls (policy
+        // edits, settlement) hit the real row on the partner's tenant
+        // rather than the static seed UUID.
+        id: acct.id,
         name: acct.name || base.name,
         storefront: (meta.storefront as string) || base.storefront,
         blurb: (meta.blurb as string) || base.blurb,
@@ -123,13 +138,21 @@ export async function fetchMerchantDetail(id: string): Promise<{
   metadata: Record<string, unknown>;
   live: boolean;
 } | null> {
-  const base = MERCHANTS.find((m) => m.id === id);
-  if (!base) return null;
   try {
     const client = asterClient();
+    // Two-step lookup so this works on fresh tenants where the static
+    // seed IDs don't exist: fetch the account by the id we got from
+    // fetchMerchants (which is the LIVE id), then resolve the static
+    // base entry by name. Fall back to static-id match if the live
+    // lookup fails (network blip, expired ID, etc.).
     const acct = unwrapAccount(
       await client.apiGet<unknown>(`/v1/accounts/${id}`),
     );
+    const acctName = (acct.name ?? '').trim().toLowerCase();
+    const base =
+      MERCHANTS.find((m) => m.id === id) ??
+      MERCHANTS.find((m) => m.name.trim().toLowerCase() === acctName);
+    if (!base) return null;
     const meta = (acct.metadata ?? {}) as Record<string, unknown>;
     const catalog = Array.isArray(meta.catalog) ? meta.catalog : [];
     return {
@@ -150,7 +173,11 @@ export async function fetchMerchantDetail(id: string): Promise<{
       live: true,
     };
   } catch {
-    return { merchant: base, metadata: {}, live: false };
+    // Live lookup failed (network blip, deleted account, …). Fall back
+    // to the static directory matched by the requested id.
+    const fallback = MERCHANTS.find((m) => m.id === id);
+    if (!fallback) return null;
+    return { merchant: fallback, metadata: {}, live: false };
   }
 }
 

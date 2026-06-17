@@ -85,7 +85,7 @@ if [[ -z "$ACCOUNT_ID" ]]; then
     "name": "Trim Demo",
     "metadata": { "onboarded_via": "trim-subs/scripts/onboard.sh" }
   }')
-  ACCOUNT_ID=$(echo "$ACCOUNT_RESP" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('data',d).get('id',''))")
+  ACCOUNT_ID=$(echo "$ACCOUNT_RESP" | python3 -c "import json,sys; d=json.load(sys.stdin); data=d.get('data',d); data=data.get('data',data) if isinstance(data,dict) and 'id' not in data else data; print(data.get('id',''))")
   if [[ -z "$ACCOUNT_ID" ]]; then
     echo "✗ Failed to create account. Response:"
     echo "$ACCOUNT_RESP" | python3 -m json.tool 2>/dev/null || echo "$ACCOUNT_RESP"

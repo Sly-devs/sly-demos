@@ -4,6 +4,7 @@
   "private": true,
   "description": "Aster demo — commerce-platform operator/merchant dashboard (Next.js)",
   "scripts": {
+    "onboard": "./scripts/onboard.sh",
     "dev": "next dev -p 3230",
     "build": "next build",
     "start": "next start -p 3230",
