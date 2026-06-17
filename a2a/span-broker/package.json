@@ -2,8 +2,9 @@
   "name": "span-broker",
   "version": "0.1.0",
   "private": true,
-  "description": "Span demo — split-screen Claude↔Sly↔ChatGPT broker viewer (Next.js)",
+  "description": "Span demo \u2014 split-screen Claude\u2194Sly\u2194ChatGPT broker viewer (Next.js)",
   "scripts": {
+    "onboard": "./scripts/onboard.sh",
     "dev": "next dev -p 3220",
     "build": "next build",
     "start": "next start -p 3220",
