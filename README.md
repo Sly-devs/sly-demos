@@ -14,9 +14,9 @@ Every demo is its own top-level folder. Inside: source + `package.json` (a runna
 
 | Demo | Port | What it shows |
 |---|---|---|
-| [`compass-live/`](./compass-live) | 3270 | **Operator dashboard.** Two-pane terminal — agent's MCP stdio + every Sly gate that fires + the exact `compass …` CLI invocation. 14 scenarios spanning earn / credit / perps / tokenized. Narrated long-form + 4 short clips in `recordings/`. |
-| [`coral-mobile/`](./coral-mobile) | 3211 | **Consumer mobile.** Maya's DeFi agent buys Nike Pegasus 41s by borrowing USDC against her Aave collateral, withdrawing to her EOA, and paying the merchant — three real on-chain legs gated by Sly. One-tap Repay closes the loop. Phone-framed. Animated cover in `screenshots/cover.gif`. |
-| [`quartz-portfolio/`](./quartz-portfolio) | 3242 | **Self-driving portfolio.** Jordan's autopilot agent runs a 60/30/10 USDC/ETH/EXP allocation with a $250/trade ceiling, weekly DCA, and a -10% drawdown circuit breaker. Every proposed trade goes through Sly's policy engine before Compass fires. |
+| [`compass/compass-live/`](./compass/compass-live) | 3270 | **Operator dashboard.** Two-pane terminal — agent's MCP stdio + every Sly gate that fires + the exact `compass …` CLI invocation. 14 scenarios spanning earn / credit / perps / tokenized. Narrated long-form + 4 short clips in `recordings/`. |
+| [`compass/coral-mobile/`](./compass/coral-mobile) | 3211 | **Consumer mobile.** Maya's DeFi agent buys Nike Pegasus 41s by borrowing USDC against her Aave collateral, withdrawing to her EOA, and paying the merchant — three real on-chain legs gated by Sly. One-tap Repay closes the loop. Phone-framed. Animated cover in `screenshots/cover.gif`. |
+| [`compass/quartz-portfolio/`](./compass/quartz-portfolio) | 3242 | **Self-driving portfolio.** Jordan's autopilot agent runs a 60/30/10 USDC/ETH/EXP allocation with a $250/trade ceiling, weekly DCA, and a -10% drawdown circuit breaker. Every proposed trade goes through Sly's policy engine before Compass fires. |
 
 ### Agentic commerce · ACP / UCP
 
@@ -106,7 +106,13 @@ Each demo's `.env.example` lists exactly the env vars it expects — running `pn
 sly-demos/
 ├── _docs/                          cross-demo architecture briefs (e.g. compass-architecture.md)
 ├── _kit/                           shared @sly/demo-kit helpers used by most demos
-├── <demo-name>/                    one folder per demo
+├── compass/                        Sly × Compass landing page + the three Compass-governed demos
+│   ├── README.md                   curated entry point for partnership materials
+│   ├── _mcp-compass/               vendored @sly_ai/mcp-compass wrapper
+│   ├── compass-live/               operator dashboard (port 3270)
+│   ├── coral-mobile/               consumer mobile (port 3211)
+│   └── quartz-portfolio/           self-driving portfolio (port 3242)
+├── <demo-name>/                    one folder per non-Compass demo
 │   ├── README.md                   description + cover screenshot + run instructions
 │   ├── .env.example
 │   ├── package.json, src/, …

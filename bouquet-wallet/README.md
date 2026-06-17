@@ -37,7 +37,7 @@ pnpm dev
   - **Maya Advisor Agent** — vets recipient + reviews gift suitability
 - Writes all six IDs + three agent tokens back to `.env.local`
 
-Idempotent — re-running finds existing rows by name. The Savings tab additionally needs the Compass setup from [`../compass-live`](../compass-live)'s `pnpm onboard` — Bouquet reuses the MAYA_AGENT credentials from coral-mobile when both demos are onboarded on the same tenant.
+Idempotent — re-running finds existing rows by name. The Savings tab additionally needs the Compass setup from [`../compass/compass-live`](../compass/compass-live)'s `pnpm onboard` — Bouquet reuses the MAYA_AGENT credentials from coral-mobile when both demos are onboarded on the same tenant.
 
 ## What you see
 
@@ -56,7 +56,7 @@ A device-frame mobile UI with two surfaces:
 - **Agent card** — Maya's Compass DeFi Agent · KYA T2 · last venue touched
 - **Borrow CTA** — "Borrow $0.10 USDC against savings"
 
-The two tabs share the wallet metaphor but exercise different parts of the Sly stack — `/` shows how envelope-based mandates work for retail agentic commerce; `/savings` is the same just-in-time scope-step-up flow as [`coral-mobile`](../coral-mobile/), embedded inside a multi-feature wallet.
+The two tabs share the wallet metaphor but exercise different parts of the Sly stack — `/` shows how envelope-based mandates work for retail agentic commerce; `/savings` is the same just-in-time scope-step-up flow as [`coral-mobile`](../compass/coral-mobile/), embedded inside a multi-feature wallet.
 
 ## The flow — gifting (`/`)
 
@@ -75,7 +75,7 @@ The envelope is the policy-engine boundary. As long as the agent's selection com
 
 ## The flow — savings (`/savings`)
 
-Identical to [`coral-mobile`](../coral-mobile/) — see that demo's README for the full step-by-step. Sly's scope step-up + Compass's `credit borrow` + CDP signing, in a 10-second mobile flow.
+Identical to [`coral-mobile`](../compass/coral-mobile/) — see that demo's README for the full step-by-step. Sly's scope step-up + Compass's `credit borrow` + CDP signing, in a 10-second mobile flow.
 
 ## Architecture
 
@@ -107,6 +107,6 @@ Bouquet started as the gifting story; the Maya savings tab was added when partne
 ## Where to go next
 
 - The merchant side of the gifting flow: [`../petal-lane/`](../petal-lane/)
-- The savings flow as a standalone phone-framed demo: [`../coral-mobile/`](../coral-mobile/)
-- The operator-side view of either flow: [`../compass-live/`](../compass-live/) for DeFi, the Sly dashboard for ACP/AP2
+- The savings flow as a standalone phone-framed demo: [`../compass/coral-mobile/`](../compass/coral-mobile/)
+- The operator-side view of either flow: [`../compass/compass-live/`](../compass/compass-live/) for DeFi, the Sly dashboard for ACP/AP2
 - The SDK underneath: [`@sly_ai/sdk`](https://www.npmjs.com/package/@sly_ai/sdk)
