@@ -4,6 +4,7 @@
   "private": true,
   "description": "Aster demo — 'Lume Goods' premium storefront (Next.js, ACP-enabled)",
   "scripts": {
+    "onboard": "./scripts/onboard.sh",
     "dev": "next dev -p 3231",
     "build": "next build",
     "start": "next start -p 3231",

@@ -4,6 +4,7 @@
   "private": true,
   "description": "Coral demo — 'Crate' merchant storefront (Next.js, ACP-enabled)",
   "scripts": {
+    "onboard": "./scripts/onboard.sh",
     "dev": "next dev -p 3210",
     "build": "next build",
     "start": "next start -p 3210",
