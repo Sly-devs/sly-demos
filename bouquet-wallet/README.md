@@ -6,11 +6,17 @@ Two-feature mobile wallet demo. Tab one is **Bouquet** — Sam (the wallet holde
 
 ![cover](./screenshots/cover.png)
 
-## Run it
+## Run it (self-serve, three commands)
 
 ```bash
-cp .env.example .env.local
-# Fill in the Sly sandbox + Compass credentials (see .env.example)
+# 1. Paste your Sly sandbox tenant key into .env.local.
+echo "BOUQUET_API_KEY=pk_test_…" > .env.local
+
+# 2. Provision Treasury + Bouquet/Coral/Maya agents on your tenant. Idempotent.
+pnpm onboard
+# → writes SLY_API_URL + {BOUQUET,CORAL,MAYA}_ACCOUNT_ID + {BOUQUET,CORAL,MAYA}_AGENT_ID + tokens to .env.local
+
+# 3. Run the demo.
 pnpm install
 pnpm dev
 # → http://localhost:3212
@@ -19,8 +25,19 @@ pnpm dev
 ### Prerequisites
 
 - Node 20+ and pnpm
-- A Sly sandbox tenant with a Bouquet agent provisioned (email `partnerships@getsly.ai` for the pre-seeded partnership demo tenant — agents + envelope-aware spending policy ready to go)
-- For the **Savings tab only**: the local `compass` CLI installed and authed (set `COMPASS_BIN` in `.env.local`)
+- A Sly sandbox tenant key (`pk_test_…`) — sign up at app.getsly.ai
+- For the **Savings tab only**: the local `compass` CLI installed and authed (set `COMPASS_BIN` in `.env.local`). The gifting tab works without it.
+
+### What `pnpm onboard` does
+
+- Creates a shared **Bouquet Demo Treasury** business account (KYB tier 2 — sandbox-verified)
+- Creates three agents under it:
+  - **Bouquet Buyer Agent** — shops for gifts within Sam's AP2 envelope
+  - **Coral Merchant Agent** — accepts ACP checkouts (Bouquet's fulfilment side)
+  - **Maya Advisor Agent** — vets recipient + reviews gift suitability
+- Writes all six IDs + three agent tokens back to `.env.local`
+
+Idempotent — re-running finds existing rows by name. The Savings tab additionally needs the Compass setup from [`../compass-live`](../compass-live)'s `pnpm onboard` — Bouquet reuses the MAYA_AGENT credentials from coral-mobile when both demos are onboarded on the same tenant.
 
 ## What you see
 

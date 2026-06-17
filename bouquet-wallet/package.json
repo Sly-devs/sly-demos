@@ -4,6 +4,7 @@
   "private": true,
   "description": "Bouquet demo — agentic gifting wallet, phone-framed (Next.js)",
   "scripts": {
+    "onboard": "./scripts/onboard.sh",
     "dev": "next dev -p 3212",
     "build": "next build",
     "start": "next start -p 3212",
