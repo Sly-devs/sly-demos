@@ -2,8 +2,9 @@
   "name": "aster-tipping",
   "version": "0.1.0",
   "private": true,
-  "description": "Aster — Creator tipping (x402 micropayments + reputation gate)",
+  "description": "Aster \u2014 Creator tipping (x402 micropayments + reputation gate)",
   "scripts": {
+    "onboard": "./scripts/onboard.sh",
     "dev": "next dev -p 3250",
     "build": "next build",
     "start": "next start -p 3250",

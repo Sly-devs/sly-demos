@@ -2,8 +2,9 @@
   "name": "hum-inference",
   "version": "0.1.0",
   "private": true,
-  "description": "Hum — sell spare phone NPU cycles. Buyer agents pay per-call via x402; payouts stream into your on-device wallet.",
+  "description": "Hum \u2014 sell spare phone NPU cycles. Buyer agents pay per-call via x402; payouts stream into your on-device wallet.",
   "scripts": {
+    "onboard": "./scripts/onboard.sh",
     "dev": "next dev -p 3260",
     "build": "next build",
     "start": "next start -p 3260",

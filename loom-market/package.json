@@ -2,8 +2,9 @@
   "name": "loom-market",
   "version": "0.1.0",
   "private": true,
-  "description": "Loom — peer resource market (A2A x402 metered compute rental)",
+  "description": "Loom \u2014 peer resource market (A2A x402 metered compute rental)",
   "scripts": {
+    "onboard": "./scripts/onboard.sh",
     "dev": "next dev -p 3243",
     "build": "next build",
     "start": "next start -p 3243",
