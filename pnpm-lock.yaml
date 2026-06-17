@@ -21,11 +21,11 @@ importers:
         specifier: ^5.6.0
         version: 5.9.3
 
-  anvil-reverse:
+  a2a/anvil-reverse:
     dependencies:
       '@sly/demo-kit':
         specifier: workspace:*
-        version: link:../_kit
+        version: link:../../_kit
       next:
         specifier: ^16.2.4
         version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -58,11 +58,313 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
-  aster-acs-adapter:
+  a2a/barter-market:
     dependencies:
       '@sly/demo-kit':
         specifier: workspace:*
-        version: link:../_kit
+        version: link:../../_kit
+      next:
+        specifier: ^16.2.4
+        version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.21
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.17)
+      autoprefixer:
+        specifier: ^10.4.20
+        version: 10.5.0(postcss@8.5.15)
+      postcss:
+        specifier: ^8.4.49
+        version: 8.5.15
+      tailwindcss:
+        specifier: ^3.4.17
+        version: 3.4.19
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
+  a2a/helix-live:
+    dependencies:
+      '@sly/demo-kit':
+        specifier: workspace:*
+        version: link:../../_kit
+      d3-force:
+        specifier: ^3.0.0
+        version: 3.0.0
+      next:
+        specifier: ^16.2.4
+        version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@types/d3-force':
+        specifier: ^3.0.10
+        version: 3.0.10
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.21
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.17)
+      autoprefixer:
+        specifier: ^10.4.20
+        version: 10.5.0(postcss@8.5.15)
+      postcss:
+        specifier: ^8.4.49
+        version: 8.5.15
+      tailwindcss:
+        specifier: ^3.4.17
+        version: 3.4.19
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
+  a2a/sigil-skills:
+    dependencies:
+      '@sly/demo-kit':
+        specifier: workspace:*
+        version: link:../../_kit
+      next:
+        specifier: ^16.2.4
+        version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.21
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.17)
+      autoprefixer:
+        specifier: ^10.4.20
+        version: 10.5.0(postcss@8.5.15)
+      postcss:
+        specifier: ^8.4.49
+        version: 8.5.15
+      tailwindcss:
+        specifier: ^3.4.17
+        version: 3.4.19
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
+  a2a/span-broker:
+    dependencies:
+      '@sly/demo-kit':
+        specifier: workspace:*
+        version: link:../../_kit
+      next:
+        specifier: ^16.2.4
+        version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.21
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.17)
+      autoprefixer:
+        specifier: ^10.4.20
+        version: 10.5.0(postcss@8.5.15)
+      postcss:
+        specifier: ^8.4.49
+        version: 8.5.15
+      tailwindcss:
+        specifier: ^3.4.17
+        version: 3.4.19
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
+  a2a/span-chatgpt-mock:
+    dependencies:
+      '@sly/demo-kit':
+        specifier: workspace:*
+        version: link:../../_kit
+      next:
+        specifier: ^16.2.4
+        version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.21
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.17)
+      autoprefixer:
+        specifier: ^10.4.20
+        version: 10.5.0(postcss@8.5.15)
+      postcss:
+        specifier: ^8.4.49
+        version: 8.5.15
+      tailwindcss:
+        specifier: ^3.4.17
+        version: 3.4.19
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
+  businesses/mint-business:
+    dependencies:
+      '@sly/demo-kit':
+        specifier: workspace:*
+        version: link:../../_kit
+      next:
+        specifier: ^16.2.4
+        version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.21
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.17)
+      autoprefixer:
+        specifier: ^10.4.20
+        version: 10.5.0(postcss@8.5.15)
+      postcss:
+        specifier: ^8.4.49
+        version: 8.5.15
+      tailwindcss:
+        specifier: ^3.4.17
+        version: 3.4.19
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
+  businesses/nest-block:
+    dependencies:
+      '@sly/demo-kit':
+        specifier: workspace:*
+        version: link:../../_kit
+      next:
+        specifier: ^16.2.4
+        version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.21
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.17)
+      autoprefixer:
+        specifier: ^10.4.20
+        version: 10.5.0(postcss@8.5.15)
+      postcss:
+        specifier: ^8.4.49
+        version: 8.5.15
+      tailwindcss:
+        specifier: ^3.4.17
+        version: 3.4.19
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
+  businesses/velvet-tickets:
+    dependencies:
+      '@sly/demo-kit':
+        specifier: workspace:*
+        version: link:../../_kit
+      next:
+        specifier: ^16.2.4
+        version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.21
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.17)
+      autoprefixer:
+        specifier: ^10.4.20
+        version: 10.5.0(postcss@8.5.15)
+      postcss:
+        specifier: ^8.4.49
+        version: 8.5.15
+      tailwindcss:
+        specifier: ^3.4.17
+        version: 3.4.19
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
+  commerce/aster-acs-adapter:
+    dependencies:
+      '@sly/demo-kit':
+        specifier: workspace:*
+        version: link:../../_kit
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -71,11 +373,11 @@ importers:
         specifier: ^5.6.0
         version: 5.9.3
 
-  aster-merchants:
+  commerce/aster-merchants:
     dependencies:
       '@sly/demo-kit':
         specifier: workspace:*
-        version: link:../_kit
+        version: link:../../_kit
       next:
         specifier: ^16.2.4
         version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -108,11 +410,11 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
-  aster-tipping:
+  commerce/crate-storefront:
     dependencies:
       '@sly/demo-kit':
         specifier: workspace:*
-        version: link:../_kit
+        version: link:../../_kit
       next:
         specifier: ^16.2.4
         version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -145,11 +447,11 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
-  barter-market:
+  commerce/forum-platform:
     dependencies:
       '@sly/demo-kit':
         specifier: workspace:*
-        version: link:../_kit
+        version: link:../../_kit
       next:
         specifier: ^16.2.4
         version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -182,11 +484,48 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
-  bouquet-wallet:
+  commerce/lume-goods:
     dependencies:
       '@sly/demo-kit':
         specifier: workspace:*
-        version: link:../_kit
+        version: link:../../_kit
+      next:
+        specifier: ^16.2.4
+        version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.21
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.17)
+      autoprefixer:
+        specifier: ^10.4.20
+        version: 10.5.0(postcss@8.5.15)
+      postcss:
+        specifier: ^8.4.49
+        version: 8.5.15
+      tailwindcss:
+        specifier: ^3.4.17
+        version: 3.4.19
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
+  commerce/petal-lane:
+    dependencies:
+      '@sly/demo-kit':
+        specifier: workspace:*
+        version: link:../../_kit
       next:
         specifier: ^16.2.4
         version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -333,11 +672,11 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
-  crate-storefront:
+  wallets/bouquet-wallet:
     dependencies:
       '@sly/demo-kit':
         specifier: workspace:*
-        version: link:../_kit
+        version: link:../../_kit
       next:
         specifier: ^16.2.4
         version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -370,11 +709,11 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
-  drift-mobility:
+  wallets/pocket-game:
     dependencies:
       '@sly/demo-kit':
         specifier: workspace:*
-        version: link:../_kit
+        version: link:../../_kit
       next:
         specifier: ^16.2.4
         version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -407,11 +746,11 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
-  echo-attention:
+  wallets/trim-subs:
     dependencies:
       '@sly/demo-kit':
         specifier: workspace:*
-        version: link:../_kit
+        version: link:../../_kit
       next:
         specifier: ^16.2.4
         version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -444,11 +783,11 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
-  forum-platform:
+  x402/aster-tipping:
     dependencies:
       '@sly/demo-kit':
         specifier: workspace:*
-        version: link:../_kit
+        version: link:../../_kit
       next:
         specifier: ^16.2.4
         version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -481,54 +820,11 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
-  helix-live:
+  x402/drift-mobility:
     dependencies:
       '@sly/demo-kit':
         specifier: workspace:*
-        version: link:../_kit
-      d3-force:
-        specifier: ^3.0.0
-        version: 3.0.0
-      next:
-        specifier: ^16.2.4
-        version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react:
-        specifier: ^19.0.0
-        version: 19.2.7
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.7(react@19.2.7)
-    devDependencies:
-      '@types/d3-force':
-        specifier: ^3.0.10
-        version: 3.0.10
-      '@types/node':
-        specifier: ^22.0.0
-        version: 22.19.21
-      '@types/react':
-        specifier: ^19.0.0
-        version: 19.2.17
-      '@types/react-dom':
-        specifier: ^19.0.0
-        version: 19.2.3(@types/react@19.2.17)
-      autoprefixer:
-        specifier: ^10.4.20
-        version: 10.5.0(postcss@8.5.15)
-      postcss:
-        specifier: ^8.4.49
-        version: 8.5.15
-      tailwindcss:
-        specifier: ^3.4.17
-        version: 3.4.19
-      typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
-
-  hum-inference:
-    dependencies:
-      '@sly/demo-kit':
-        specifier: workspace:*
-        version: link:../_kit
+        version: link:../../_kit
       next:
         specifier: ^16.2.4
         version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -561,11 +857,11 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
-  loom-market:
+  x402/echo-attention:
     dependencies:
       '@sly/demo-kit':
         specifier: workspace:*
-        version: link:../_kit
+        version: link:../../_kit
       next:
         specifier: ^16.2.4
         version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -598,11 +894,11 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
-  lume-goods:
+  x402/hum-inference:
     dependencies:
       '@sly/demo-kit':
         specifier: workspace:*
-        version: link:../_kit
+        version: link:../../_kit
       next:
         specifier: ^16.2.4
         version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -635,307 +931,11 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
-  mint-business:
+  x402/loom-market:
     dependencies:
       '@sly/demo-kit':
         specifier: workspace:*
-        version: link:../_kit
-      next:
-        specifier: ^16.2.4
-        version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react:
-        specifier: ^19.0.0
-        version: 19.2.7
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.7(react@19.2.7)
-    devDependencies:
-      '@types/node':
-        specifier: ^22.0.0
-        version: 22.19.21
-      '@types/react':
-        specifier: ^19.0.0
-        version: 19.2.17
-      '@types/react-dom':
-        specifier: ^19.0.0
-        version: 19.2.3(@types/react@19.2.17)
-      autoprefixer:
-        specifier: ^10.4.20
-        version: 10.5.0(postcss@8.5.15)
-      postcss:
-        specifier: ^8.4.49
-        version: 8.5.15
-      tailwindcss:
-        specifier: ^3.4.17
-        version: 3.4.19
-      typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
-
-  nest-block:
-    dependencies:
-      '@sly/demo-kit':
-        specifier: workspace:*
-        version: link:../_kit
-      next:
-        specifier: ^16.2.4
-        version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react:
-        specifier: ^19.0.0
-        version: 19.2.7
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.7(react@19.2.7)
-    devDependencies:
-      '@types/node':
-        specifier: ^22.0.0
-        version: 22.19.21
-      '@types/react':
-        specifier: ^19.0.0
-        version: 19.2.17
-      '@types/react-dom':
-        specifier: ^19.0.0
-        version: 19.2.3(@types/react@19.2.17)
-      autoprefixer:
-        specifier: ^10.4.20
-        version: 10.5.0(postcss@8.5.15)
-      postcss:
-        specifier: ^8.4.49
-        version: 8.5.15
-      tailwindcss:
-        specifier: ^3.4.17
-        version: 3.4.19
-      typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
-
-  petal-lane:
-    dependencies:
-      '@sly/demo-kit':
-        specifier: workspace:*
-        version: link:../_kit
-      next:
-        specifier: ^16.2.4
-        version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react:
-        specifier: ^19.0.0
-        version: 19.2.7
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.7(react@19.2.7)
-    devDependencies:
-      '@types/node':
-        specifier: ^22.0.0
-        version: 22.19.21
-      '@types/react':
-        specifier: ^19.0.0
-        version: 19.2.17
-      '@types/react-dom':
-        specifier: ^19.0.0
-        version: 19.2.3(@types/react@19.2.17)
-      autoprefixer:
-        specifier: ^10.4.20
-        version: 10.5.0(postcss@8.5.15)
-      postcss:
-        specifier: ^8.4.49
-        version: 8.5.15
-      tailwindcss:
-        specifier: ^3.4.17
-        version: 3.4.19
-      typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
-
-  pocket-game:
-    dependencies:
-      '@sly/demo-kit':
-        specifier: workspace:*
-        version: link:../_kit
-      next:
-        specifier: ^16.2.4
-        version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react:
-        specifier: ^19.0.0
-        version: 19.2.7
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.7(react@19.2.7)
-    devDependencies:
-      '@types/node':
-        specifier: ^22.0.0
-        version: 22.19.21
-      '@types/react':
-        specifier: ^19.0.0
-        version: 19.2.17
-      '@types/react-dom':
-        specifier: ^19.0.0
-        version: 19.2.3(@types/react@19.2.17)
-      autoprefixer:
-        specifier: ^10.4.20
-        version: 10.5.0(postcss@8.5.15)
-      postcss:
-        specifier: ^8.4.49
-        version: 8.5.15
-      tailwindcss:
-        specifier: ^3.4.17
-        version: 3.4.19
-      typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
-
-  sigil-skills:
-    dependencies:
-      '@sly/demo-kit':
-        specifier: workspace:*
-        version: link:../_kit
-      next:
-        specifier: ^16.2.4
-        version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react:
-        specifier: ^19.0.0
-        version: 19.2.7
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.7(react@19.2.7)
-    devDependencies:
-      '@types/node':
-        specifier: ^22.0.0
-        version: 22.19.21
-      '@types/react':
-        specifier: ^19.0.0
-        version: 19.2.17
-      '@types/react-dom':
-        specifier: ^19.0.0
-        version: 19.2.3(@types/react@19.2.17)
-      autoprefixer:
-        specifier: ^10.4.20
-        version: 10.5.0(postcss@8.5.15)
-      postcss:
-        specifier: ^8.4.49
-        version: 8.5.15
-      tailwindcss:
-        specifier: ^3.4.17
-        version: 3.4.19
-      typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
-
-  span-broker:
-    dependencies:
-      '@sly/demo-kit':
-        specifier: workspace:*
-        version: link:../_kit
-      next:
-        specifier: ^16.2.4
-        version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react:
-        specifier: ^19.0.0
-        version: 19.2.7
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.7(react@19.2.7)
-    devDependencies:
-      '@types/node':
-        specifier: ^22.0.0
-        version: 22.19.21
-      '@types/react':
-        specifier: ^19.0.0
-        version: 19.2.17
-      '@types/react-dom':
-        specifier: ^19.0.0
-        version: 19.2.3(@types/react@19.2.17)
-      autoprefixer:
-        specifier: ^10.4.20
-        version: 10.5.0(postcss@8.5.15)
-      postcss:
-        specifier: ^8.4.49
-        version: 8.5.15
-      tailwindcss:
-        specifier: ^3.4.17
-        version: 3.4.19
-      typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
-
-  span-chatgpt-mock:
-    dependencies:
-      '@sly/demo-kit':
-        specifier: workspace:*
-        version: link:../_kit
-      next:
-        specifier: ^16.2.4
-        version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react:
-        specifier: ^19.0.0
-        version: 19.2.7
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.7(react@19.2.7)
-    devDependencies:
-      '@types/node':
-        specifier: ^22.0.0
-        version: 22.19.21
-      '@types/react':
-        specifier: ^19.0.0
-        version: 19.2.17
-      '@types/react-dom':
-        specifier: ^19.0.0
-        version: 19.2.3(@types/react@19.2.17)
-      autoprefixer:
-        specifier: ^10.4.20
-        version: 10.5.0(postcss@8.5.15)
-      postcss:
-        specifier: ^8.4.49
-        version: 8.5.15
-      tailwindcss:
-        specifier: ^3.4.17
-        version: 3.4.19
-      typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
-
-  trim-subs:
-    dependencies:
-      '@sly/demo-kit':
-        specifier: workspace:*
-        version: link:../_kit
-      next:
-        specifier: ^16.2.4
-        version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react:
-        specifier: ^19.0.0
-        version: 19.2.7
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.7(react@19.2.7)
-    devDependencies:
-      '@types/node':
-        specifier: ^22.0.0
-        version: 22.19.21
-      '@types/react':
-        specifier: ^19.0.0
-        version: 19.2.17
-      '@types/react-dom':
-        specifier: ^19.0.0
-        version: 19.2.3(@types/react@19.2.17)
-      autoprefixer:
-        specifier: ^10.4.20
-        version: 10.5.0(postcss@8.5.15)
-      postcss:
-        specifier: ^8.4.49
-        version: 8.5.15
-      tailwindcss:
-        specifier: ^3.4.17
-        version: 3.4.19
-      typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
-
-  velvet-tickets:
-    dependencies:
-      '@sly/demo-kit':
-        specifier: workspace:*
-        version: link:../_kit
+        version: link:../../_kit
       next:
         specifier: ^16.2.4
         version: 16.2.9(@opentelemetry/api@1.9.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
