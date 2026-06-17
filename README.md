@@ -10,11 +10,13 @@ Every demo is its own top-level folder. Inside: source + `package.json` (a runna
 
 ### DeFi · governed by Sly via Compass
 
+> **Looking for the Compass × Sly integration overview?** Start at [`compass/`](./compass) — a curated landing page that pitches the integration, links to all three demos with cover images, and walks you through the joint `pnpm onboard --with-quartz` flow that wires everything together. (Sharable URL for Compass-side docs: `github.com/Sly-devs/sly-demos/tree/main/compass`.)
+
 | Demo | Port | What it shows |
 |---|---|---|
-| [`compass-live/`](./compass-live) | 3270 | **Operator dashboard.** Two-pane terminal — agent's MCP stdio + every Sly gate that fires + the exact `compass …` CLI invocation. 8 scenarios spanning earn / credit / perps / tokenized. Narrated long-form + 4 short clips in `recordings/`. |
+| [`compass-live/`](./compass-live) | 3270 | **Operator dashboard.** Two-pane terminal — agent's MCP stdio + every Sly gate that fires + the exact `compass …` CLI invocation. 14 scenarios spanning earn / credit / perps / tokenized. Narrated long-form + 4 short clips in `recordings/`. |
 | [`coral-mobile/`](./coral-mobile) | 3211 | **Consumer mobile.** Maya's DeFi agent buys Nike Pegasus 41s by borrowing USDC against her Aave collateral, withdrawing to her EOA, and paying the merchant — three real on-chain legs gated by Sly. One-tap Repay closes the loop. Phone-framed. Animated cover in `screenshots/cover.gif`. |
-| [`quartz-portfolio/`](./quartz-portfolio) | 3242 | Self-driving crypto portfolio (Compass + policy-bounded DCA). |
+| [`quartz-portfolio/`](./quartz-portfolio) | 3242 | **Self-driving portfolio.** Jordan's autopilot agent runs a 60/30/10 USDC/ETH/EXP allocation with a $250/trade ceiling, weekly DCA, and a -10% drawdown circuit breaker. Every proposed trade goes through Sly's policy engine before Compass fires. |
 
 ### Agentic commerce · ACP / UCP
 
