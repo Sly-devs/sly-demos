@@ -114,24 +114,47 @@ export default function CompassDemoPage() {
   const [agentsLoading, setAgentsLoading] = useState(true);
   const esRef = useRef<EventSource | null>(null);
 
-  // Fetch the tenant's agents once. The /api/agents proxy holds the
-  // tenant key server-side and annotates each row with hasWallet +
-  // hasCompassAllowlist for capability gating.
+  // Fetch the tenant's agents. The /api/agents proxy holds the tenant
+  // key server-side and annotates each row with hasWallet +
+  // hasCompassAllowlist for capability gating. One retry on transient
+  // failure / empty response — partner tenants on cold-start sometimes
+  // return [] before the wallet-probe lands, which used to leave the
+  // picker stuck in "no compatible agent".
   useEffect(() => {
     let alive = true;
-    void fetch('/api/agents')
-      .then((r) => r.json())
-      .then((d: { agents: PickableAgent[] }) => {
-        if (!alive) return;
-        setAgents(d.agents ?? []);
-        // Restore previous selection or pick the first compatible agent.
-        const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(PICKER_STORAGE_KEY) : null;
-        const valid = (d.agents ?? []).find((a) => a.id === stored && a.hasWallet);
-        const fallback = (d.agents ?? []).find((a) => a.hasWallet && a.status === 'active');
-        setSelectedAgentId(valid?.id ?? fallback?.id ?? null);
-      })
-      .catch(() => { /* picker will show a "couldn't load agents" state */ })
-      .finally(() => { if (alive) setAgentsLoading(false); });
+    async function load(attempt = 0): Promise<PickableAgent[]> {
+      try {
+        const r = await fetch('/api/agents');
+        const d: { agents: PickableAgent[] } = await r.json();
+        const list = d.agents ?? [];
+        if (!list.length && attempt === 0) {
+          await new Promise((res) => setTimeout(res, 1500));
+          return load(1);
+        }
+        return list;
+      } catch {
+        if (attempt === 0) {
+          await new Promise((res) => setTimeout(res, 1500));
+          return load(1);
+        }
+        return [];
+      }
+    }
+    void load().then((list) => {
+      if (!alive) return;
+      setAgents(list);
+      const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(PICKER_STORAGE_KEY) : null;
+      const valid = list.find((a) => a.id === stored && a.hasWallet);
+      const fallback = list.find((a) => a.hasWallet && a.status === 'active');
+      const chosen = valid?.id ?? fallback?.id ?? null;
+      setSelectedAgentId(chosen);
+      // Sync localStorage with the resolved choice so a tenant switch
+      // (or a stale stored ID) doesn't keep biting on subsequent loads.
+      try {
+        if (chosen && chosen !== stored) localStorage.setItem(PICKER_STORAGE_KEY, chosen);
+        else if (!chosen && stored) localStorage.removeItem(PICKER_STORAGE_KEY);
+      } catch { /* noop */ }
+    }).finally(() => { if (alive) setAgentsLoading(false); });
     return () => { alive = false; };
   }, []);
 
