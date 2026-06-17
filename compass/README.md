@@ -12,27 +12,27 @@ This folder is the curated entry point. The three runnable demos below show the 
 
 ## The trio
 
-### 1. [`compass-live`](../compass-live) — operator dashboard
+### 1. [`compass-live`](./compass-live) — operator dashboard
 
 Two-pane terminal. Left pane streams the agent's MCP stdio output; right pane streams every Sly policy gate that fires plus the exact `compass …` CLI invocation Sly shells out to on approve.
 
 **Fourteen scenarios** covering earn / credit / perps / tokenized — single-action, multi-step, and deny paths. Single-tap onboarding via `pnpm onboard` provisions the agents on your tenant.
 
-[![compass-live cover](../compass-live/screenshots/cover.png)](../compass-live)
+[![compass-live cover](./compass-live/screenshots/cover.png)](./compass-live)
 
-### 2. [`coral-mobile`](../coral-mobile) — consumer mobile
+### 2. [`coral-mobile`](./coral-mobile) — consumer mobile
 
 Phone-framed mobile UI showing **Maya** — a user whose DeFi agent buys things on her behalf by borrowing against her Aave collateral via Compass, governed by Sly. Framed as a chat-driven *"find me shoes under 150 USDC"* → *"pay with my Aave credit line"* flow, with the borrow / withdraw / merchant-pay / repay loop visible on-screen.
 
 Three real on-chain legs gated by Sly. One-tap Repay closes the loop.
 
-[![coral-mobile cover](../coral-mobile/screenshots/cover.gif)](../coral-mobile)
+[![coral-mobile cover](./coral-mobile/screenshots/cover.gif)](./coral-mobile)
 
-### 3. [`quartz-portfolio`](../quartz-portfolio) — self-driving autopilot
+### 3. [`quartz-portfolio`](./quartz-portfolio) — self-driving autopilot
 
 Desktop portfolio UI where Jordan's autopilot agent runs a 60/30/10 USDC/ETH/EXP allocation with a $250/trade ceiling, weekly DCA, and a -10% drawdown circuit breaker. Every proposed trade goes through Sly's policy engine before Compass fires.
 
-[![quartz-portfolio cover](../quartz-portfolio/screenshots/cover.png)](../quartz-portfolio)
+[![quartz-portfolio cover](./quartz-portfolio/screenshots/cover.png)](./quartz-portfolio)
 
 ---
 
@@ -52,8 +52,8 @@ $EDITOR .env.local
 # 2. Provision your tenant.
 pnpm onboard --with-quartz
 # → Provisions Treasury + 4 agents (earn, credit, operator, quartz),
-#   writes env blocks to ../coral-mobile/.env.local and
-#   ../quartz-portfolio/.env.local automatically.
+#   writes env blocks to ./coral-mobile/.env.local and
+#   ./quartz-portfolio/.env.local automatically.
 
 # 3. Run all three demos.
 pnpm install
@@ -95,7 +95,7 @@ Every approved call lands a bilateral receipt — Sly's signed `PolicyDecision` 
 
 Architecture brief, MCP wrapper layout, step-up scope model, bilateral receipts, the per-owner Safe-as-Sly-wallet pattern: [`_docs/compass-architecture.md`](../_docs/compass-architecture.md).
 
-The MCP wrapper this all rides on: [`@sly_ai/mcp-compass`](https://www.npmjs.com/package/@sly_ai/mcp-compass) on npm, vendored at [`_mcp-compass/`](../_mcp-compass) for the demo runners.
+The MCP wrapper this all rides on: [`@sly_ai/mcp-compass`](https://www.npmjs.com/package/@sly_ai/mcp-compass) on npm, vendored at [`_mcp-compass/`](./_mcp-compass) for the demo runners.
 
 ## Contact
 
