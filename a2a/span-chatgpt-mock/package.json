@@ -2,8 +2,9 @@
   "name": "span-chatgpt-mock",
   "version": "0.1.0",
   "private": true,
-  "description": "Span demo — high-fidelity ChatGPT custom-GPT mock 'Outpost Outdoors' (Next.js)",
+  "description": "Span demo \u2014 high-fidelity ChatGPT custom-GPT mock 'Outpost Outdoors' (Next.js)",
   "scripts": {
+    "onboard": "./scripts/onboard.sh",
     "dev": "next dev -p 3221",
     "build": "next build",
     "start": "next start -p 3221",

@@ -2,8 +2,9 @@
   "name": "anvil-reverse",
   "version": "0.1.0",
   "private": true,
-  "description": "Anvil — reverse marketplace: you post an intent, KYA-bonded sellers bid.",
+  "description": "Anvil \u2014 reverse marketplace: you post an intent, KYA-bonded sellers bid.",
   "scripts": {
+    "onboard": "./scripts/onboard.sh",
     "dev": "next dev -p 3254",
     "build": "next build",
     "start": "next start -p 3254",

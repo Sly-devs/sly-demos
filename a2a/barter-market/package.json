@@ -2,8 +2,9 @@
   "name": "barter-market",
   "version": "0.1.0",
   "private": true,
-  "description": "Barter — A2A haggling market (offers, counters, accept) governed by Sly.",
+  "description": "Barter \u2014 A2A haggling market (offers, counters, accept) governed by Sly.",
   "scripts": {
+    "onboard": "./scripts/onboard.sh",
     "dev": "next dev -p 3252",
     "build": "next build",
     "start": "next start -p 3252",
