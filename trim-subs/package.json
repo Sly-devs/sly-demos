@@ -4,6 +4,7 @@
   "private": true,
   "description": "Trim — subscription autopilot. Finds dupes & unused subs, cancels with one tap.",
   "scripts": {
+    "onboard": "./scripts/onboard.sh",
     "dev": "next dev -p 3261",
     "build": "next build",
     "start": "next start -p 3261",
