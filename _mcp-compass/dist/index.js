@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import {
   createCompassMcpServer
-} from "./chunk-Q6RQK7ND.js";
+} from "./chunk-Y7NAVUZU.js";
 import {
   tools
 } from "./chunk-KNARCM5Z.js";
