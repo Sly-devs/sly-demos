@@ -2,8 +2,9 @@
   "name": "drift-mobility",
   "version": "0.1.0",
   "private": true,
-  "description": "Drift — mobility micropay wallet (parking · tolls · charging via x402)",
+  "description": "Drift \u2014 mobility micropay wallet (parking \u00b7 tolls \u00b7 charging via x402)",
   "scripts": {
+    "onboard": "./scripts/onboard.sh",
     "dev": "next dev -p 3251",
     "build": "next build",
     "start": "next start -p 3251",

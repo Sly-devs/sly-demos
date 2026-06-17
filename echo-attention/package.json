@@ -2,8 +2,9 @@
   "name": "echo-attention",
   "version": "0.1.0",
   "private": true,
-  "description": "Echo — sell-my-attention agent. Brand offers in, x402 micropay out.",
+  "description": "Echo \u2014 sell-my-attention agent. Brand offers in, x402 micropay out.",
   "scripts": {
+    "onboard": "./scripts/onboard.sh",
     "dev": "next dev -p 3253",
     "build": "next build",
     "start": "next start -p 3253",
