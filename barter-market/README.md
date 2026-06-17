@@ -16,4 +16,4 @@ Some demos additionally depend on:
 - `@sly_ai/sdk` — Sly TypeScript SDK ([npm](https://www.npmjs.com/package/@sly_ai/sdk))
 See the `package.json` for the exact dependency list.
 ## Status
-Source + screenshot included. Full runnable setup against the public sandbox is rolling out incrementally — email `partnerships@getsly.ai` if you want to demo this one specifically.
+Source + screenshot included. Full runnable setup against the public sandbox is rolling out incrementally — email `partners@getsly.ai` if you want to demo this one specifically.

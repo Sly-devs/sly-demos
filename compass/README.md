@@ -1,8 +1,8 @@
 # Sly × Compass
 
-Compass Labs ships embedded DeFi infrastructure — yield (Aave, Morpho), credit lines, perpetuals (Hyperliquid global markets), tokenized equities (Ondo) — across Ethereum / Base / Arbitrum. Their CLI ships agent-native: `--agent-mode`, TOON output, KDL usage schema, auto-activation in Claude Code / Cursor.
+[**Compass Labs**](https://www.compasslabs.ai) ships embedded DeFi infrastructure — yield (Aave, Morpho), credit lines, perpetuals (Hyperliquid global markets), tokenized equities (Ondo) — across Ethereum / Base / Arbitrum. Their CLI ships agent-native: `--agent-mode`, TOON output, KDL usage schema, auto-activation in Claude Code / Cursor. Full reference at [docs.compasslabs.ai](https://docs.compasslabs.ai).
 
-What Compass doesn't have: a governance layer. No KYA, no spending policies, no kill-switch, no step-up scopes, no signed audit trail. That's the seam Sly sits in.
+What Compass doesn't have: a governance layer. No KYA, no spending policies, no kill-switch, no step-up scopes, no signed audit trail. That's the seam [**Sly**](https://getsly.ai) sits in — see [docs.getsly.ai](https://docs.getsly.ai) for the platform reference.
 
 **The composition** — every state-changing Compass call goes through Sly's policy engine first; Compass only sees the action if Sly approves. Each leg lands a bilateral receipt: signed PolicyDecision ⇄ on-chain tx hash, anchored on Base.
 
@@ -97,8 +97,8 @@ Architecture brief, MCP wrapper layout, step-up scope model, bilateral receipts,
 
 The MCP wrapper this all rides on: [`@sly_ai/mcp-compass`](https://www.npmjs.com/package/@sly_ai/mcp-compass) on npm, vendored at [`_mcp-compass/`](./_mcp-compass) for the demo runners.
 
-## Contact
+## Contact + references
 
-- Partnerships: `partnerships@getsly.ai`
-- Engineering: `eng@getsly.ai`
-- Docs: [docs.getsly.ai](https://docs.getsly.ai)
+- Sly partnerships: `partners@getsly.ai`
+- Sly docs: [docs.getsly.ai](https://docs.getsly.ai) · sandbox: [sandbox.getsly.ai](https://sandbox.getsly.ai)
+- Compass: [compasslabs.ai](https://www.compasslabs.ai) · docs: [docs.compasslabs.ai](https://docs.compasslabs.ai) · dashboard: [api.compasslabs.ai](https://api.compasslabs.ai)
