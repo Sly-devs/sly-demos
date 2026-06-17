@@ -26,7 +26,7 @@ pnpm dev
 
 > **The self-serve `pnpm onboard` for this demo is not yet shipped.** Unlike the other commerce demos, forum-platform spans two tenants with 5 accounts (Forum, Sarah Reyes, Mira, Lume Fee, Tax), 2 agents (Quill, Mira), and wallet IDs that hand off across tenants — substantially more involved than the single-tenant pattern the rest of the wallets / commerce demos use.
 >
-> Until a multi-tenant onboarding script lands, email `partnerships@getsly.ai` for the pre-seeded partnership demo tenants and credentials. Tracked as a follow-up to sly-demos#29.
+> Until a multi-tenant onboarding script lands, email `partners@getsly.ai` for the pre-seeded partnership demo tenants and credentials. Tracked as a follow-up to sly-demos#29.
 
 ## What you see
 

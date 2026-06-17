@@ -2,7 +2,7 @@
 
 Phone-framed mobile UI showing Maya — a user whose DeFi agent buys things on her behalf by borrowing against her Aave collateral via Compass, governed by Sly. Framed as a chat-driven "find me shoes under $150" → "pay with my Aave credit line" flow, with the borrow / withdraw / merchant-pay / repay loop visible on-screen.
 
-> Part of [Sly-devs/sly-demos](https://github.com/Sly-devs/sly-demos). For the integration architecture, see [`_docs/compass-architecture.md`](../_docs/compass-architecture.md).
+> Part of [Sly-devs/sly-demos](https://github.com/Sly-devs/sly-demos). For the integration architecture, see [`_docs/compass-architecture.md`](../../_docs/compass-architecture.md).
 
 ![cover](./screenshots/cover.gif)
 

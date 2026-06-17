@@ -81,7 +81,6 @@ Adding a new Compass surface = one entry in `tools.ts` + one spec in `governed-a
 
 ## Contact
 
-- Partnerships: `partnerships@getsly.ai`
-- Engineering: `eng@getsly.ai`
+- Partnerships: `partners@getsly.ai`
 - npm: [`@sly_ai/mcp-compass`](https://www.npmjs.com/package/@sly_ai/mcp-compass)
 - Sandbox: [`sandbox.getsly.ai`](https://sandbox.getsly.ai)

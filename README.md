@@ -74,9 +74,9 @@ Every demo is its own top-level folder. Inside: source + `package.json` (a runna
 | ✅ Source + screenshot (basic README) | every other demo above |
 | ✅ Points at public sandbox by default | every demo — `SLY_API_URL` defaults to `https://sandbox.getsly.ai` |
 | ✅ Per-demo `.env.example` listing exact env vars | every demo |
-| 🚧 Pre-provisioned demo tenant (drop-in tokens) | email `partnerships@getsly.ai` |
+| 🚧 Pre-provisioned demo tenant (drop-in tokens) | email `partners@getsly.ai` |
 
-Every demo now defaults to the public Sly sandbox (`https://sandbox.getsly.ai`, Base Sepolia, no real money). To run end-to-end you need a tenant on that sandbox + at least one provisioned agent — email `partnerships@getsly.ai` for a Compass-ready demo tenant (agents + Compass venue allowlist already configured) or self-provision following the [SDK quickstart](https://docs.getsly.ai/quickstart).
+Every demo now defaults to the public Sly sandbox (`https://sandbox.getsly.ai`, Base Sepolia, no real money). To run end-to-end you need a tenant on that sandbox + at least one provisioned agent — email `partners@getsly.ai` for a Compass-ready demo tenant (agents + Compass venue allowlist already configured) or self-provision following the [SDK quickstart](https://docs.getsly.ai/quickstart).
 
 ## Install + run
 
@@ -127,7 +127,6 @@ MIT.
 
 ## Contact
 
-- Partnerships: `partnerships@getsly.ai`
-- Engineering: `eng@getsly.ai`
+- Partnerships: `partners@getsly.ai`
 - Docs: [docs.getsly.ai](https://docs.getsly.ai)
 - npm: [`@sly_ai/mcp-compass`](https://www.npmjs.com/package/@sly_ai/mcp-compass) (the MCP wrapper several Compass-related demos depend on) · [`@sly_ai/sdk`](https://www.npmjs.com/package/@sly_ai/sdk)
