@@ -22,49 +22,49 @@ Every demo is its own top-level folder. Inside: source + `package.json` (a runna
 
 | Demo | Port | What it shows |
 |---|---|---|
-| [`crate-storefront/`](./crate-storefront) | 3210 | "Crate" merchant storefront, ACP-enabled. |
-| [`petal-lane/`](./petal-lane) | 3210 | "Petal Lane" merchant storefront, ACP-enabled. |
-| [`lume-goods/`](./lume-goods) | 3231 | "Lume Goods" premium storefront, ACP-enabled. |
-| [`aster-merchants/`](./aster-merchants) | 3230 | Commerce-platform operator/merchant dashboard. |
-| [`aster-acs-adapter/`](./aster-acs-adapter) | — | Stripe ACS → Sly ACP shim (demo-only mock host). |
-| [`forum-platform/`](./forum-platform) | 3240 | Marketplace-as-a-service operator platform — real Sly cross-tenant ACP + split engine. |
+| [`commerce/crate-storefront/`](./commerce/crate-storefront) | 3210 | "Crate" merchant storefront, ACP-enabled. |
+| [`commerce/petal-lane/`](./commerce/petal-lane) | 3210 | "Petal Lane" merchant storefront, ACP-enabled. |
+| [`commerce/lume-goods/`](./commerce/lume-goods) | 3231 | "Lume Goods" premium storefront, ACP-enabled. |
+| [`commerce/aster-merchants/`](./commerce/aster-merchants) | 3230 | Commerce-platform operator/merchant dashboard. |
+| [`commerce/aster-acs-adapter/`](./commerce/aster-acs-adapter) | — | Stripe ACS → Sly ACP shim (demo-only mock host). |
+| [`commerce/forum-platform/`](./commerce/forum-platform) | 3240 | Marketplace-as-a-service operator platform — real Sly cross-tenant ACP + split engine. |
 
 ### x402 · per-call micropayments
 
 | Demo | Port | What it shows |
 |---|---|---|
-| [`aster-tipping/`](./aster-tipping) | 3250 | Creator tipping — x402 micropayments + reputation gate. |
-| [`drift-mobility/`](./drift-mobility) | 3251 | Mobility micropay wallet (parking · tolls · charging). |
-| [`echo-attention/`](./echo-attention) | 3253 | Sell-my-attention agent. Brand offers in, x402 micropay out. |
-| [`hum-inference/`](./hum-inference) | 3260 | Sell spare phone NPU cycles — buyer agents pay per call. |
-| [`loom-market/`](./loom-market) | 3243 | Peer resource market — A2A x402 metered compute rental. |
+| [`x402/aster-tipping/`](./x402/aster-tipping) | 3250 | Creator tipping — x402 micropayments + reputation gate. |
+| [`x402/drift-mobility/`](./x402/drift-mobility) | 3251 | Mobility micropay wallet (parking · tolls · charging). |
+| [`x402/echo-attention/`](./x402/echo-attention) | 3253 | Sell-my-attention agent. Brand offers in, x402 micropay out. |
+| [`x402/hum-inference/`](./x402/hum-inference) | 3260 | Sell spare phone NPU cycles — buyer agents pay per call. |
+| [`x402/loom-market/`](./x402/loom-market) | 3243 | Peer resource market — A2A x402 metered compute rental. |
 
 ### A2A · agent-to-agent coordination
 
 | Demo | Port | What it shows |
 |---|---|---|
-| [`barter-market/`](./barter-market) | 3252 | A2A haggling market — offers, counters, accept, governed. |
-| [`anvil-reverse/`](./anvil-reverse) | 3254 | Reverse marketplace — you post an intent, KYA-bonded sellers bid. |
-| [`sigil-skills/`](./sigil-skills) | 3263 | A2A skill rental — time-bounded skill grants with auto-revoke. |
-| [`helix-live/`](./helix-live) | 3241 | Live agentic-marketplace wall-board across 4 protocol rails. |
-| [`span-broker/`](./span-broker) | 3220 | Split-screen Claude ↔ Sly ↔ ChatGPT broker viewer. |
-| [`span-chatgpt-mock/`](./span-chatgpt-mock) | 3221 | High-fidelity ChatGPT custom-GPT mock ("Outpost Outdoors") for the broker viewer. |
+| [`a2a/barter-market/`](./a2a/barter-market) | 3252 | A2A haggling market — offers, counters, accept, governed. |
+| [`a2a/anvil-reverse/`](./a2a/anvil-reverse) | 3254 | Reverse marketplace — you post an intent, KYA-bonded sellers bid. |
+| [`a2a/sigil-skills/`](./a2a/sigil-skills) | 3263 | A2A skill rental — time-bounded skill grants with auto-revoke. |
+| [`a2a/helix-live/`](./a2a/helix-live) | 3241 | Live agentic-marketplace wall-board across 4 protocol rails. |
+| [`a2a/span-broker/`](./a2a/span-broker) | 3220 | Split-screen Claude ↔ Sly ↔ ChatGPT broker viewer. |
+| [`a2a/span-chatgpt-mock/`](./a2a/span-chatgpt-mock) | 3221 | High-fidelity ChatGPT custom-GPT mock ("Outpost Outdoors") for the broker viewer. |
 
 ### Wallets · consumer surfaces
 
 | Demo | Port | What it shows |
 |---|---|---|
-| [`bouquet-wallet/`](./bouquet-wallet) | 3212 | Agentic gifting wallet, phone-framed. |
-| [`pocket-game/`](./pocket-game) | 3266 | In-game wallet with parent-mandate caps + A2A peer trades. |
-| [`trim-subs/`](./trim-subs) | 3261 | Subscription autopilot — finds dupes & unused subs, cancels with one tap. |
+| [`wallets/bouquet-wallet/`](./wallets/bouquet-wallet) | 3212 | Agentic gifting wallet, phone-framed. |
+| [`wallets/pocket-game/`](./wallets/pocket-game) | 3266 | In-game wallet with parent-mandate caps + A2A peer trades. |
+| [`wallets/trim-subs/`](./wallets/trim-subs) | 3261 | Subscription autopilot — finds dupes & unused subs, cancels with one tap. |
 
 ### Agent-run businesses · mesh · scarce drops
 
 | Demo | Port | What it shows |
 |---|---|---|
-| [`mint-business/`](./mint-business) | 3265 | Agent-run micro-business — autonomous shop with P&L, dividends, on Sly. |
-| [`nest-block/`](./nest-block) | 3264 | Neighborhood agent mesh — borrow a drill, hire a dog-walker, lend a spare key. |
-| [`velvet-tickets/`](./velvet-tickets) | 3262 | KYA-gated scarce drops — no scalper bots, no fake queues. |
+| [`businesses/mint-business/`](./businesses/mint-business) | 3265 | Agent-run micro-business — autonomous shop with P&L, dividends, on Sly. |
+| [`businesses/nest-block/`](./businesses/nest-block) | 3264 | Neighborhood agent mesh — borrow a drill, hire a dog-walker, lend a spare key. |
+| [`businesses/velvet-tickets/`](./businesses/velvet-tickets) | 3262 | KYA-gated scarce drops — no scalper bots, no fake queues. |
 
 ## Status
 
@@ -104,21 +104,33 @@ Each demo's `.env.example` lists exactly the env vars it expects — running `pn
 
 ```
 sly-demos/
-├── _docs/                          cross-demo architecture briefs (e.g. compass-architecture.md)
+├── _docs/                          cross-demo architecture briefs
 ├── _kit/                           shared @sly/demo-kit helpers used by most demos
-├── compass/                        Sly × Compass landing page + the three Compass-governed demos
-│   ├── README.md                   curated entry point for partnership materials
-│   ├── _mcp-compass/               vendored @sly_ai/mcp-compass wrapper
-│   ├── compass-live/               operator dashboard (port 3270)
-│   ├── coral-mobile/               consumer mobile (port 3211)
-│   └── quartz-portfolio/           self-driving portfolio (port 3242)
-├── <demo-name>/                    one folder per non-Compass demo
-│   ├── README.md                   description + cover screenshot + run instructions
-│   ├── .env.example
-│   ├── package.json, src/, …
-│   ├── screenshots/cover.png
-│   └── recordings/ (where applicable)
+├── compass/                        Sly × Compass — landing page + the three Compass-governed demos
+│   ├── README.md
+│   ├── _mcp-compass/, compass-live/, coral-mobile/, quartz-portfolio/
+├── commerce/                       ACP / UCP storefronts + operator dashboards
+│   ├── README.md
+│   ├── crate-storefront/, petal-lane/, lume-goods/
+│   └── aster-merchants/, aster-acs-adapter/, forum-platform/
+├── x402/                           per-call micropayment demos
+│   ├── README.md
+│   └── aster-tipping/, drift-mobility/, echo-attention/, hum-inference/, loom-market/
+├── a2a/                            agent-to-agent coordination
+│   ├── README.md
+│   ├── barter-market/, anvil-reverse/, sigil-skills/
+│   └── helix-live/, span-broker/, span-chatgpt-mock/
+├── wallets/                        consumer phone-framed wallets
+│   ├── README.md
+│   └── bouquet-wallet/, pocket-game/, trim-subs/
+├── businesses/                     agent-run businesses · mesh · scarce drops
+│   ├── README.md
+│   └── mint-business/, nest-block/, velvet-tickets/
 └── README.md
+
+Each demo folder:
+  README.md, .env.example, scripts/onboard.sh (where shipped),
+  package.json, src/, screenshots/cover.png, recordings/ (where applicable)
 ```
 
 ## License
