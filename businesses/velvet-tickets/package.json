@@ -2,8 +2,9 @@
   "name": "velvet-tickets",
   "version": "0.1.0",
   "private": true,
-  "description": "Velvet — KYA-gated scarce drops. No scalper bots, no fake queues.",
+  "description": "Velvet \u2014 KYA-gated scarce drops. No scalper bots, no fake queues.",
   "scripts": {
+    "onboard": "./scripts/onboard.sh",
     "dev": "next dev -p 3262",
     "build": "next build",
     "start": "next start -p 3262",

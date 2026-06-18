@@ -2,8 +2,9 @@
   "name": "nest-block",
   "version": "0.1.0",
   "private": true,
-  "description": "Nest — neighborhood agent mesh. Borrow a drill, hire a dog-walker, lend your spare key.",
+  "description": "Nest \u2014 neighborhood agent mesh. Borrow a drill, hire a dog-walker, lend your spare key.",
   "scripts": {
+    "onboard": "./scripts/onboard.sh",
     "dev": "next dev -p 3264",
     "build": "next build",
     "start": "next start -p 3264",
