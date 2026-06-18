@@ -27,7 +27,6 @@ Every demo is its own top-level folder. Inside: source + `package.json` (a runna
 | [`commerce/lume-goods/`](./commerce/lume-goods) | 3231 | "Lume Goods" premium storefront, ACP-enabled. |
 | [`commerce/aster-merchants/`](./commerce/aster-merchants) | 3230 | Commerce-platform operator/merchant dashboard. |
 | [`commerce/aster-acs-adapter/`](./commerce/aster-acs-adapter) | — | Stripe ACS → Sly ACP shim (demo-only mock host). |
-| [`commerce/forum-platform/`](./commerce/forum-platform) | 3240 | Marketplace-as-a-service operator platform — real Sly cross-tenant ACP + split engine. |
 
 ### x402 · per-call micropayments
 

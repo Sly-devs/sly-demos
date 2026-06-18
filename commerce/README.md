@@ -11,4 +11,3 @@ Each demo is self-serve (where the architecture allows) — one tenant key, one 
 | [`lume-goods/`](./lume-goods) | 3231 | 'Lume Goods' premium storefront, ACP-enabled. Aster wallet users come through this storefront. |
 | [`aster-merchants/`](./aster-merchants) | 3230 | Commerce-platform operator/merchant dashboard. Directory of 5 merchant businesses with live KYB tier, reputation gate, auto-accept policy, and catalog size. |
 | [`aster-acs-adapter/`](./aster-acs-adapter) | — | Stripe ACS → Sly ACP shim. Pure TypeScript mapper that translates Stripe's Agentic Commerce Spec shape into a Sly ACP `agentBuy` call. No agents to provision. |
-| [`forum-platform/`](./forum-platform) | 3240 | Marketplace-as-a-service operator platform. Real Sly cross-tenant ACP + split engine — Quill (buyer agent) hires Mira (seller agent) via x402; $100 splits 10% platform fee, 8% tax, 82% to Mira. Multi-tenant onboarding still pending. |
