@@ -2,7 +2,7 @@
 
 Two-feature mobile wallet demo. Tab one is **Bouquet** — Sam (the wallet holder) lets an AI agent shop for a gift inside a pre-approved spending envelope rather than authorizing a specific item. Tab two is **Maya's Savings** — the same wallet pattern reused for Compass-side DeFi: borrow against an Aave position via just-in-time scope approval.
 
-> Part of [Sly-devs/sly-demos](https://github.com/Sly-devs/sly-demos). For the Compass integration architecture see [`_docs/compass-architecture.md`](../../_docs/compass-architecture.md). For the gifting (ACP+AP2+MPP) story see [`../../commerce/petal-lane/`](../../commerce/petal-lane/) — the merchant side of the same checkout.
+> Part of [Sly-devs/sly-demos](https://github.com/Sly-devs/sly-demos). For the Compass integration architecture see [`compass/ARCHITECTURE.md`](../../compass/ARCHITECTURE.md). For the gifting (ACP+AP2+MPP) story see [`../../commerce/petal-lane/`](../../commerce/petal-lane/) — the merchant side of the same checkout.
 
 ![cover](./screenshots/cover.png)
 

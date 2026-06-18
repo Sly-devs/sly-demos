@@ -93,7 +93,7 @@ Every approved call lands a bilateral receipt — Sly's signed `PolicyDecision` 
 
 ## Deep dive
 
-Architecture brief, MCP wrapper layout, step-up scope model, bilateral receipts, the per-owner Safe-as-Sly-wallet pattern: [`_docs/compass-architecture.md`](../_docs/compass-architecture.md).
+Architecture brief, MCP wrapper layout, step-up scope model, bilateral receipts, the per-owner Safe-as-Sly-wallet pattern: [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
 The MCP wrapper this all rides on: [`@sly_ai/mcp-compass`](https://www.npmjs.com/package/@sly_ai/mcp-compass) on npm, vendored at [`_mcp-compass/`](./_mcp-compass) for the demo runners.
 

@@ -105,15 +105,14 @@ Each demo's `.env.example` lists exactly the env vars it expects — running `pn
 
 ```
 sly-demos/
-├── _docs/                          cross-demo architecture briefs
 ├── _kit/                           shared @sly/demo-kit helpers used by most demos
-├── compass/                        Sly × Compass — landing page + the three Compass-governed demos
-│   ├── README.md
+├── compass/                        Sly × Compass — landing page + ARCHITECTURE.md + the three Compass-governed demos
+│   ├── README.md, ARCHITECTURE.md
 │   ├── _mcp-compass/, compass-live/, coral-mobile/, quartz-portfolio/
 ├── commerce/                       ACP / UCP storefronts + operator dashboards
 │   ├── README.md
 │   ├── crate-storefront/, petal-lane/, lume-goods/
-│   └── aster-merchants/, aster-acs-adapter/, forum-platform/
+│   └── aster-merchants/, aster-acs-adapter/
 ├── x402/                           per-call micropayment demos
 │   ├── README.md
 │   └── aster-tipping/, drift-mobility/, echo-attention/, hum-inference/, loom-market/
