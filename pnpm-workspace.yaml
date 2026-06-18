@@ -7,7 +7,6 @@ packages:
   - 'commerce/aster-acs-adapter'
   - 'commerce/aster-merchants'
   - 'commerce/crate-storefront'
-  - 'commerce/forum-platform'
   - 'commerce/lume-goods'
   - 'commerce/petal-lane'
   - 'x402/aster-tipping'
