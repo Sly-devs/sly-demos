@@ -2,8 +2,9 @@
   "name": "mint-business",
   "version": "0.1.0",
   "private": true,
-  "description": "Mint — agent-run micro-business. Autonomous shop with P&L, dividends, on-Sly.",
+  "description": "Mint \u2014 agent-run micro-business. Autonomous shop with P&L, dividends, on-Sly.",
   "scripts": {
+    "onboard": "./scripts/onboard.sh",
     "dev": "next dev -p 3265",
     "build": "next build",
     "start": "next start -p 3265",
