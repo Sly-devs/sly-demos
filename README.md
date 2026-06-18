@@ -2,9 +2,11 @@
 
 Public, partner-facing demos for [Sly](https://getsly.ai) — the agentic economy platform.
 
+> 📘 **Looking for the platform reference?** [docs.getsly.ai](https://docs.getsly.ai) is the canonical documentation portal — API reference, KYA tier model, scope step-up, contract policy engine, audit log, and SDK guides. This repo is the *runnable companion*: every concept in the docs has at least one working demo here.
+
 Sly is the governance layer for AI agents that move money. Each demo here is a runnable scenario showing one slice of what Sly does: KYA tier checks, scope step-up, venue allowlists, spending caps, kill-switch, bilateral receipts. Some demos exercise a specific partner stack (Compass, Stripe ACS, …); others are standalone capability showcases.
 
-Every demo is its own top-level folder. Inside: source + `package.json` (a runnable Next.js app pointed at the [Sly sandbox](https://sandbox.getsly.ai)), a README with a cover screenshot, and (where applicable) a `recordings/` folder with narrated walkthroughs.
+Each demo lives under its category folder. Inside: source + `package.json` (a runnable Next.js app pointed at the [Sly sandbox](https://sandbox.getsly.ai)), a README with a cover screenshot, a `scripts/onboard.sh` (where shipped), and (where applicable) a `recordings/` folder with narrated walkthroughs.
 
 ## Demo catalogue
 
