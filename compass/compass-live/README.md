@@ -2,7 +2,7 @@
 
 Live two-pane operator demo. Left pane shows the agent's MCP-stdio output; right pane shows every Sly policy gate that fires plus the exact `compass …` CLI invocation that gets shelled out on approve.
 
-> Part of [Sly-devs/sly-demos](https://github.com/Sly-devs/sly-demos). For the integration architecture, see [`_docs/compass-architecture.md`](../../_docs/compass-architecture.md).
+> Part of [Sly-devs/sly-demos](https://github.com/Sly-devs/sly-demos). For the integration architecture, see [`compass/ARCHITECTURE.md`](../ARCHITECTURE.md).
 
 ![cover](./screenshots/cover.png)
 
@@ -134,7 +134,7 @@ The runner emits events as they happen — there's no replay. Multi-step scenari
 
 ## Architecture deep-dive
 
-For the full architecture (MCP wrapper layout, step-up scope model, bilateral receipts, the per-owner Safe-as-Sly-wallet pattern), see `_docs/compass-architecture.md` in the repo root.
+For the full architecture (MCP wrapper layout, step-up scope model, bilateral receipts, the per-owner Safe-as-Sly-wallet pattern), see [`compass/ARCHITECTURE.md`](../ARCHITECTURE.md).
 
 ## Where to go next
 

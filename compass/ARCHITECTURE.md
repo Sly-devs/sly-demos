@@ -1,6 +1,6 @@
 # Sly × Compass — Architecture Brief
 
-Public partner-facing summary of the integration. Source-of-truth for the engineering team is the internal Epic 101 PRD; this is what we share externally.
+Partner-facing summary of the integration.
 
 ## What it is
 
@@ -52,7 +52,7 @@ unsigned tx | EIP-712 typed_data | Hyperliquid action
 
 4. **Bilateral receipts.** Every governed action produces `{ policy_decision_id, tx_hash }`. Stored on `policy_evaluations.execution_tx_hash` on Sly's side; trackable in Compass's event log on theirs. Either side can audit the other.
 
-5. **Single executor.** Earn `manage` + `swap` and credit `transfer --action WITHDRAW` are plain EVM txs — Sly's CDP layer signs + broadcasts and returns the tx hash. Credit `borrow` / `repay` and tokenized orders return EIP-712 payloads — Sly's CDP layer signs the typed data and returns the signature; caller submits via Compass. Perps execution (Hyperliquid signing scheme) is roadmap — see [`compass-perps-execution-scoping.md`](./compass-perps-execution-scoping.md).
+5. **Single executor.** Earn `manage` + `swap` and credit `transfer --action WITHDRAW` are plain EVM txs — Sly's CDP layer signs + broadcasts and returns the tx hash. Credit `borrow` / `repay` and tokenized orders return EIP-712 payloads — Sly's CDP layer signs the typed data and returns the signature; caller submits via Compass. Perps execution (Hyperliquid signing scheme) is on the roadmap.
 
 ## Surface coverage
 
@@ -67,9 +67,9 @@ Adding a new Compass surface = one entry in `tools.ts` + one spec in `governed-a
 
 ## What's NOT in v1 (roadmap)
 
-- `--decision-jwt` runtime mode (Compass-side ask — would let Sly become a pure attestation provider with no HTTP round-trip)
-- Hyperliquid perps execute (gate is complete; the CDP `signTypedData` → Hyperliquid `/exchange` POST path needs wiring; ~1–2 days)
-- Hierarchical agent delegation (parent treasury · scoped sub-agents). Faked preview in `compass-live`'s Treasury-of-agents scenario; real build is ~5 days
+- `--decision-jwt` runtime mode (joint roadmap item — would let Sly act as a pure attestation provider with no HTTP round-trip)
+- Hyperliquid perps execute (gate is complete; CDP `signTypedData` → Hyperliquid `/exchange` POST path is the remaining wiring)
+- Hierarchical agent delegation (parent treasury · scoped sub-agents) — the Treasury-of-agents scenario in `compass-live` previews the UI shape; live implementation is on the roadmap
 - Multi-step intent governance (rebalance plans, conditional sequences)
 - Jurisdiction policy for tokenized equities (KYA tier × geo restrictions)
 - Programmable revoke triggers (e.g. auto-revoke on N consecutive denials)

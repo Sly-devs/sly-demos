@@ -2,7 +2,7 @@
 
 Desktop portfolio UI where Jordan's autopilot agent runs a 60/30/10 USDC/ETH/EXP allocation with a $250/trade ceiling, weekly DCA, and a -10% drawdown circuit breaker. Every proposed trade goes through Sly's policy engine before Compass fires.
 
-> Part of [Sly-devs/sly-demos](https://github.com/Sly-devs/sly-demos). For the Compass integration architecture see [`_docs/compass-architecture.md`](../../_docs/compass-architecture.md).
+> Part of [Sly-devs/sly-demos](https://github.com/Sly-devs/sly-demos). For the Compass integration architecture see [`compass/ARCHITECTURE.md`](../ARCHITECTURE.md).
 
 ![cover](./screenshots/cover.png)
 
@@ -123,4 +123,4 @@ POST /api/rebalance ──► Sly: /v1/policy/evaluate-intent
 - The operator-side view of the same flow: [`../compass-live/`](../compass-live/) — shows the same audit trail as a two-pane terminal
 - The consumer-mobile borrow flow: [`../coral-mobile/`](../coral-mobile/)
 - The MCP wrapper underneath: [`@sly_ai/mcp-compass`](https://www.npmjs.com/package/@sly_ai/mcp-compass) — `governed_earn_swap` is the tool Quartz actually calls
-- The drawdown engine is a custom policy check beyond the stock catalog — see `_docs/compass-architecture.md` for how custom engines compose with the built-in ones
+- The drawdown engine is a custom policy check beyond the stock catalog — see [`compass/ARCHITECTURE.md`](../ARCHITECTURE.md) for how custom engines compose with the built-in ones
